@@ -14,75 +14,72 @@ const BDHomepage = () => {
   const ITEMS_PER_PAGE = 20;
 
   // Fetch BDs from the API
-  const fetchBDs = useCallback(async (pageNum = 1, isNewSearch = false) => {
+  const fetchBDs = useCallback(async (pageNum = 1, isNewSearch = false, search = searchTerm) => {
     if (loading) return;
     
     setLoading(true);
     setError(null);
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/bds/`, {
-        params: {
-          skip: (pageNum - 1) * ITEMS_PER_PAGE,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined
-        }
+      const params = new URLSearchParams({
+        skip: ((pageNum - 1) * ITEMS_PER_PAGE).toString(),
+        limit: ITEMS_PER_PAGE.toString(),
       });
-
-      const newBDs = response.data;
+      if (search && search.trim() !== '') {
+        params.append('search', search);
+      }
+      const res = await fetch(`${API_BASE_URL}/bds/?${params.toString()}`);
+      if (!res.ok) throw new Error('Erreur lors du chargement des BD');
+      const data = await res.json();
       
       if (isNewSearch) {
-        setBds(newBDs);
+        setBds(data);
       } else {
-        setBds(prev => [...prev, ...newBDs]);
+        setBds(prev => [...prev, ...data]);
       }
       
-      setHasMore(newBDs.length === ITEMS_PER_PAGE);
-      setPage(pageNum + 1);
+      setHasMore(data.length === ITEMS_PER_PAGE);
     } catch (err) {
-      console.error('Error fetching BDs:', err);
-      setError('Erreur lors du chargement des BD. Vérifiez que le serveur backend est démarré.');
+      setError(err.message || 'Erreur inconnue');
     } finally {
       setLoading(false);
     }
-  }, [loading, searchTerm]);
+  }, [loading, API_BASE_URL, ITEMS_PER_PAGE]);
 
-  // Initial load
+  // Initial load and when searchTerm changes
   useEffect(() => {
-    fetchBDs(1, true);
-  }, []);
-
-  // Handle search
-  const handleSearch = useCallback((term) => {
-    setSearchTerm(term);
     setPage(1);
-    setBds([]);
-    setHasMore(true);
-    setTimeout(() => fetchBDs(1, true), 100);
-  }, [fetchBDs]);
+    fetchBDs(1, true, searchTerm);
+    // eslint-disable-next-line
+  }, [searchTerm]);
 
   // Infinite scroll handler
   useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop 
-        >= document.documentElement.offsetHeight - 1000 &&
-        hasMore &&
-        !loading
-      ) {
-        fetchBDs(page);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [fetchBDs, hasMore, loading, page]);
+    if (page === 1) return; // Already loaded by searchTerm effect
+    fetchBDs(page, false, searchTerm);
+    // eslint-disable-next-line
+  }, [page]);
 
   // Search input handler
   const handleSearchInput = (e) => {
-    const value = e.target.value;
-    handleSearch(value);
+    setSearchTerm(e.target.value);
   };
+
+  // Infinite scroll event
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+          document.documentElement.offsetHeight - 200 &&
+        hasMore &&
+        !loading
+      ) {
+        setPage(prev => prev + 1);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMore, loading]);
 
   return (
     <div className="bd-homepage">
