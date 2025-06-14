@@ -76,23 +76,6 @@ def list_bds(
     
     return query.offset(skip).limit(limit).all()
 
-# Get single BD by ID
-@router.get("/bds/{bid}", response_model=schemas.BDBase)
-def get_bd(bid: str, db: Session = Depends(get_db)):
-    bd = db.query(models.BD).filter(models.BD.bid == bid).first()
-    if bd is None:
-        raise HTTPException(status_code=404, detail="BD not found")
-    return bd
-
-# List all Membres
-@router.get("/membres/", response_model=list[schemas.MembresBase])
-def list_membres(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
-    db: Session = Depends(get_db)
-):
-    return db.query(models.Membres).offset(skip).limit(limit).all()
-
 # Get BD statistics and total count
 @router.get("/bds/count")
 def get_bds_count(
@@ -119,6 +102,23 @@ def get_bds_count(
     
     total = query.count()
     return {"total": total}
+
+# Get single BD by ID
+@router.get("/bds/{bid}", response_model=schemas.BDBase)
+def get_bd(bid: str, db: Session = Depends(get_db)):
+    bd = db.query(models.BD).filter(models.BD.bid == bid).first()
+    if bd is None:
+        raise HTTPException(status_code=404, detail="BD not found")
+    return bd
+
+# List all Membres
+@router.get("/membres/", response_model=list[schemas.MembresBase])
+def list_membres(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    return db.query(models.Membres).offset(skip).limit(limit).all()
 
 # Get BD statistics
 @router.get("/stats/")
