@@ -1,6 +1,16 @@
-from sqlalchemy import Column, String, Integer, Date, TIMESTAMP, Text, ForeignKey
+from sqlalchemy import Column, String, Integer, Date, TIMESTAMP, Text, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from .database import Base
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), unique=True, nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
+    created_at = Column(TIMESTAMP)
 
 class BD(Base):
     __tablename__ = "bd"

@@ -1,8 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import router as api_router
+from .database import engine
+from . import models
 
-app = FastAPI()
+# Create database tables
+models.Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title="BD Library API",
+    description="A secure API for managing a comic book library",
+    version="1.0.0"
+)
 
 # Allow CORS for frontend
 app.add_middleware(
@@ -17,4 +26,4 @@ app.include_router(api_router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Backend is running!"}
+    return {"message": "BD Library API is running! Visit /docs for API documentation."}
