@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import BDCard from './BDCard';
 import './BDHomepage.css';
 
 const BDHomepage = () => {
@@ -121,10 +120,37 @@ const BDHomepage = () => {
           </div>
         )}
 
-        <div className="bd-grid">
-          {bds.map((bd, index) => (
-            <BDCard key={`${bd.bid}-${index}`} bd={bd} />
-          ))}
+        <div className="bd-table-container">
+          <table className="bd-table">
+            <thead>
+              <tr>
+                <th>Cote</th>
+                <th>Série</th>
+                <th>Titre Album</th>
+                <th>Tome</th>
+                <th>Scénariste</th>
+                <th>Dessinateur</th>
+                <th>Éditeur</th>
+                <th>Collection</th>
+                <th>Genre</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bds.map((bd, index) => (
+                <tr key={`${bd.bid}-${index}`} className="bd-row">
+                  <td className="bd-cote">{bd.cote}</td>
+                  <td className="bd-series">{bd.titreserie || '-'}</td>
+                  <td className="bd-title">{bd.titrealbum || 'Album sans titre'}</td>
+                  <td className="bd-tome">{bd.numtome || '-'}</td>
+                  <td className="bd-author">{bd.scenariste}</td>
+                  <td className="bd-artist">{bd.dessinateur}</td>
+                  <td className="bd-publisher">{bd.editeur || '-'}</td>
+                  <td className="bd-collection">{bd.collection || '-'}</td>
+                  <td className="bd-genre">{bd.genre || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {loading && (
