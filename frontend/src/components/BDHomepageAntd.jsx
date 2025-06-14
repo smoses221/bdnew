@@ -10,7 +10,9 @@ const BDHomepage = () => {
   const [bds, setBds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
@@ -140,11 +142,14 @@ const BDHomepage = () => {
       search = searchTerm,
       sortField,
       sortOrder,
-      append = false
+      append = false,
+      isSearch = false
     } = params;
 
     if (append) {
       setLoadingMore(true);
+    } else if (isSearch) {
+      setSearching(true);
     } else {
       setLoading(true);
     }
@@ -191,6 +196,7 @@ const BDHomepage = () => {
     } finally {
       setLoading(false);
       setLoadingMore(false);
+      setSearching(false);
     }
   }, [searchTerm, fetchTotalCount, pageSize]);
 
@@ -221,22 +227,30 @@ const BDHomepage = () => {
   // Initial load
   useEffect(() => {
     fetchBDs({ page: 0 });
+    setIsInitialLoad(false);
   }, []);
 
   // Handle search with debounce
   useEffect(() => {
+    // Skip search effect on initial load
+    if (isInitialLoad) return;
+
     const timeoutId = setTimeout(() => {
+      // Only search if the term has meaningful content or is empty (to reset)
+      const trimmedSearch = searchTerm.trim();
+      
       setCurrentPage(0);
       setHasMore(true);
       fetchBDs({ 
         page: 0,
-        search: searchTerm,
-        ...sortInfo
+        search: trimmedSearch,
+        ...sortInfo,
+        isSearch: true
       });
-    }, 300);
+    }, 400); // Increased debounce to 500ms for smoother typing
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, fetchBDs, sortInfo]);
+  }, [searchTerm, fetchBDs, sortInfo, isInitialLoad]);
 
   // Handle table changes (sorting)
   const handleTableChange = (paginationInfo, filters, sorter) => {
@@ -274,13 +288,16 @@ const BDHomepage = () => {
         
         <Space.Compact size="large" className="search-container">
           <Input
-            placeholder="Rechercher..."
-            prefix={<SearchOutlined />}
+            placeholder={searching ? "Recherche en cours..." : "Rechercher..."}
+            prefix={<SearchOutlined spin={searching} />}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             allowClear
             size="middle"
-            style={{ width: '100%' }}
+            style={{ 
+              width: '100%',
+              opacity: searching ? 0.7 : 1
+            }}
           />
         </Space.Compact>
       </div>
