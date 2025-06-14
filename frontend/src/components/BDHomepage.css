@@ -75,9 +75,9 @@
 
 .bd-content {
   width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 2rem 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 2rem;
 }
 
 .bd-table-container {
@@ -93,7 +93,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
-  min-width: 1000px;
+  table-layout: fixed;
 }
 
 .bd-table thead {
@@ -109,7 +109,20 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+/* Column width distribution */
+.bd-table th:nth-child(1) { width: 8%; }   /* Cote */
+.bd-table th:nth-child(2) { width: 16%; }  /* Série */
+.bd-table th:nth-child(3) { width: 18%; }  /* Titre */
+.bd-table th:nth-child(4) { width: 6%; }   /* Tome */
+.bd-table th:nth-child(5) { width: 15%; }  /* Scénariste */
+.bd-table th:nth-child(6) { width: 15%; }  /* Dessinateur */
+.bd-table th:nth-child(7) { width: 12%; }  /* Éditeur */
+.bd-table th:nth-child(8) { width: 10%; }  /* Collection */
 
 .bd-table th:first-child {
   border-top-left-radius: 12px;
@@ -137,6 +150,9 @@
   border-bottom: 1px solid #e5e7eb;
   vertical-align: top;
   line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bd-cote {
@@ -146,41 +162,46 @@
   color: #1e40af;
   padding: 0.5rem 0.75rem !important;
   border-radius: 0.375rem;
-  white-space: nowrap;
   font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .bd-title {
   font-weight: 600;
   color: #1f2937;
-  max-width: 200px;
-  word-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bd-series {
   color: #6b7280;
   font-style: italic;
-  max-width: 180px;
-  word-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bd-author, .bd-artist {
   color: #374151;
-  max-width: 150px;
-  word-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bd-publisher, .bd-collection {
   color: #6b7280;
-  max-width: 120px;
-  word-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bd-genre {
   color: #059669;
   font-weight: 500;
-  max-width: 100px;
-  word-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bd-tome {
@@ -273,7 +294,7 @@
   }
   
   .bd-content {
-    padding: 1rem 0.5rem;
+    padding: 1rem 1rem;
   }
   
   .bd-table-container {
@@ -303,7 +324,7 @@
 
 @media (max-width: 480px) {
   .bd-content {
-    padding: 1rem 0.25rem;
+    padding: 1rem 0.5rem;
   }
   
   .bd-main-title {
