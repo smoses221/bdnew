@@ -40,9 +40,9 @@ const About = ({ onNavigate }) => {
               <HeartOutlined /> Notre Mission
             </Title>
             <Paragraph style={{ fontSize: '16px', lineHeight: '1.8' }}>
-              Nous sommes une bibliothèque de bandes dessinées passionnée par l'art séquentiel 
-              et dédiée à partager cette passion avec notre communauté. Notre mission est de 
-              rendre la BD accessible à tous, des classiques intemporels aux créations les plus récentes.
+              Nous sommes un collectif d'étudiants qui se nomme le KotBD. Notre mission est de
+              rendre la Bande Dessinée accessible à tous, en offrant un espace où les
+              passionnés peuvent se rencontrer, échanger et découvrir de nouvelles œuvres.
             </Paragraph>
           </div>
 
@@ -51,10 +51,11 @@ const About = ({ onNavigate }) => {
               <InfoCircleOutlined /> Notre Collection
             </Title>
             <Paragraph style={{ fontSize: '16px', lineHeight: '1.8' }}>
-              Notre collection comprend des milliers de bandes dessinées de tous genres : 
+              Notre BDthèque comprend des milliers de bandes dessinées de tous genres : 
               aventure, science-fiction, fantasy, histoire, humour, et bien plus encore. 
               Nous nous efforçons de maintenir une collection diversifiée qui plaira à tous 
-              les âges et à tous les goûts.
+              les âges et à tous les goûts. N'hésitez pas à venir explorer notre sélection
+              et à découvrir vos prochaines lectures préférées !
             </Paragraph>
           </div>
 
@@ -63,10 +64,10 @@ const About = ({ onNavigate }) => {
               Nos Services
             </Title>
             <Paragraph style={{ fontSize: '16px', lineHeight: '1.8' }}>
-              • <strong>Consultation sur place</strong> : Venez découvrir nos BD dans un espace confortable<br/>
-              • <strong>Système de location</strong> : Empruntez vos BD préférées pour les lire chez vous<br/>
+              • <strong>Lecture sur place</strong> : Venez découvrir nos BD dans un espace confortable<br/>
+              • <strong>Système de location</strong> : Empruntez vos BD préférées pour les lire chez vous à prix imbattable<br/>
               • <strong>Recommandations personnalisées</strong> : Notre équipe vous aide à découvrir de nouveaux titres<br/>
-              • <strong>Événements et activités</strong> : Rencontres d'auteurs, clubs de lecture, expositions
+              • <strong>Événements et activités</strong> : Rencontres d'auteurs, dessin de BD en direct, ateliers créatifs
             </Paragraph>
           </div>
 
@@ -83,8 +84,7 @@ const About = ({ onNavigate }) => {
             </Title>
             <Text style={{ color: 'white', fontSize: '16px' }}>
               Que vous soyez un lecteur occasionnel ou un passionné de BD, 
-              vous êtes les bienvenus dans notre bibliothèque. Venez découvrir 
-              l'univers merveilleux de la bande dessinée avec nous !
+              vous êtes les bienvenus. Venez découvrir l'univers merveilleux de la bande dessinée avec nous !
             </Text>
           </Card>
         </Space>
