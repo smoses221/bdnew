@@ -12,6 +12,16 @@
 ## Setup
 
 ### Backend
+Use docker 
+ docker run -d \
+  --name mysql-bookdb \
+  -e MYSQL_ROOT_PASSWORD=rootpassword \
+  -e MYSQL_DATABASE=bookdb \
+  -e MYSQL_USER=appuser \
+  -e MYSQL_PASSWORD=apppassword \
+  -p 3306:3306 \
+  mysql:8.0 \
+  --default-authentication-plugin=mysql_native_password
 1. `cd backend`
 2. `python -m venv venv && source venv/bin/activate`
 3. `pip install -r requirements.txt`

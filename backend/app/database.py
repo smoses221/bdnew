@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://appuser:password@localhost:3306/bookdb")
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://appuser:apppassword@0.0.0.0:3306/bookdb")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
