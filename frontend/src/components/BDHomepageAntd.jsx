@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Table, Input, Typography, Space, Tag, App } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { Table, Input, Typography, Space, Tag, Menu, Button } from 'antd';
+import { SearchOutlined, UserOutlined, HomeOutlined, TeamOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import './BDHomepageAntd.css';
 
 const { Title, Text } = Typography;
 
-const BDHomepage = () => {
+const BDHomepage = ({ onNavigate }) => {
   const [bds, setBds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -17,6 +17,7 @@ const BDHomepage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [sortInfo, setSortInfo] = useState({});
+  const [selectedMenuItem, setSelectedMenuItem] = useState('bdteque');
   
   const pageSize = 100; // Number of items per page
 
@@ -271,8 +272,76 @@ const BDHomepage = () => {
     });
   };
 
+  // Menu items configuration
+  const menuItems = [
+    {
+      key: 'bdteque',
+      icon: <HomeOutlined />,
+      label: 'BDtèque',
+    },
+    {
+      key: 'nos-actis',
+      icon: <TeamOutlined />,
+      label: 'Nos Actis',
+    },
+    {
+      key: 'sur-nous',
+      icon: <InfoCircleOutlined />,
+      label: 'Sur Nous',
+    },
+    {
+      key: 'login',
+      icon: <UserOutlined />,
+      label: 'Login',
+    },
+  ];
+
+  const handleMenuClick = ({ key }) => {
+    setSelectedMenuItem(key);
+    // Handle navigation logic here
+    switch (key) {
+      case 'bdteque':
+        // Already on the main page
+        break;
+      case 'nos-actis':
+        // Open Facebook page in new tab
+        window.open('https://www.facebook.com/Kot.BD', '_blank');
+        break;
+      case 'sur-nous':
+        // Navigate to about page
+        if (onNavigate) {
+          onNavigate('sur-nous');
+        }
+        break;
+      case 'login':
+        // Navigate to login page
+        if (onNavigate) {
+          onNavigate('login');
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <div className="bd-homepage-antd">
+      {/* Navigation Menu */}
+      <div className="top-navigation">
+        <div className="nav-container">
+          <div className="nav-logo">
+            <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>BD Collection</Text>
+          </div>
+          <Menu
+            mode="horizontal"
+            selectedKeys={[selectedMenuItem]}
+            onClick={handleMenuClick}
+            className="top-menu"
+            items={menuItems}
+          />
+        </div>
+      </div>
+
       <div className="bd-header-antd">
         <Title level={1} className="bd-main-title">
           Bibliothèque BD
