@@ -1,64 +1,28 @@
 import React, { useState } from 'react';
 import { 
   Layout, 
-  Menu, 
   Typography, 
   Button, 
   Card, 
   Space,
-  Divider,
   Alert,
   Tag,
   Breadcrumb
 } from 'antd';
 import { 
-  HomeOutlined,
-  TeamOutlined,
-  InfoCircleOutlined,
   SettingOutlined,
-  LogoutOutlined,
   BookOutlined,
   UserOutlined,
   CalendarOutlined,
-  DatabaseOutlined,
-  ArrowLeftOutlined
+  HomeOutlined,
+  DatabaseOutlined
 } from '@ant-design/icons';
 
-const { Header, Content } = Layout;
+const { Content } = Layout;
 const { Title, Text } = Typography;
 
-const AdminControlPanel = ({ onNavigate, currentUser, onLogout }) => {
+const AdminControlPanel = ({ currentUser }) => {
   const [activeSection, setActiveSection] = useState('bds');
-  const [selectedMenuItem, setSelectedMenuItem] = useState('admin');
-
-  // Top navigation menu items
-  const menuItems = [
-    {
-      key: 'bdteque',
-      icon: <HomeOutlined />,
-      label: 'BDtèque',
-    },
-    {
-      key: 'nos-actis',
-      icon: <TeamOutlined />,
-      label: 'Nos Actis',
-    },
-    {
-      key: 'sur-nous',
-      icon: <InfoCircleOutlined />,
-      label: 'Sur Nous',
-    },
-    {
-      key: 'admin',
-      icon: <SettingOutlined />,
-      label: 'Admin',
-    },
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: `Logout (${currentUser?.username})`,
-    },
-  ];
 
   // Control panel section buttons
   const sectionButtons = [
@@ -84,15 +48,6 @@ const AdminControlPanel = ({ onNavigate, currentUser, onLogout }) => {
       color: '#fa8c16'
     }
   ];
-
-  const handleMenuClick = ({ key }) => {
-    if (key === 'logout') {
-      onLogout();
-    } else {
-      setSelectedMenuItem(key);
-      onNavigate && onNavigate(key);
-    }
-  };
 
   const handleSectionChange = (sectionKey) => {
     setActiveSection(sectionKey);
@@ -145,43 +100,7 @@ const AdminControlPanel = ({ onNavigate, currentUser, onLogout }) => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      {/* Top Navigation */}
-      <Header style={{ 
-        background: '#ffffff', 
-        borderBottom: '1px solid #e8e8e8',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-        padding: '0 24px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          height: '100%'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
-              <BookOutlined /> KotBD
-            </Title>
-          </div>
-          <Menu
-            mode="horizontal"
-            selectedKeys={[selectedMenuItem]}
-            items={menuItems}
-            onClick={handleMenuClick}
-            style={{ 
-              border: 'none',
-              background: 'transparent',
-              minWidth: '400px',
-              justifyContent: 'flex-end'
-            }}
-          />
-        </div>
-      </Header>
-
+    <Layout style={{ minHeight: 'calc(100vh - 64px)' }}>
       <Content style={{ padding: '24px', background: '#f5f5f5' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           {/* Breadcrumb */}
@@ -200,22 +119,13 @@ const AdminControlPanel = ({ onNavigate, currentUser, onLogout }) => {
 
           {/* Admin Panel Header */}
           <Card style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <Title level={2} style={{ margin: '0 0 8px 0', color: '#1890ff' }}>
-                  <SettingOutlined /> Panneau d'Administration
-                </Title>
-                <Text type="secondary">
-                  Bienvenue, {currentUser?.username}. Gérez votre BDthèque depuis ce panneau de contrôle.
-                </Text>
-              </div>
-              <Button 
-                icon={<ArrowLeftOutlined />}
-                onClick={() => onNavigate('bdteque')}
-                size="large"
-              >
-                Retour à la BDtèque
-              </Button>
+            <div>
+              <Title level={2} style={{ margin: '0 0 8px 0', color: '#1890ff' }}>
+                <SettingOutlined /> Panneau d'Administration
+              </Title>
+              <Text type="secondary">
+                Bienvenue, {currentUser?.username}. Gérez votre BDthèque depuis ce panneau de contrôle.
+              </Text>
             </div>
           </Card>
 

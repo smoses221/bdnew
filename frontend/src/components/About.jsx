@@ -1,27 +1,18 @@
 import React from 'react';
-import { Typography, Card, Space, Divider, Button } from 'antd';
-import { InfoCircleOutlined, HeartOutlined, BookOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { Typography, Card, Space, Divider } from 'antd';
+import { InfoCircleOutlined, HeartOutlined, BookOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph, Text } = Typography;
 
-const About = ({ onNavigate }) => {
+const About = () => {
   return (
     <div style={{ 
       padding: '40px 20px', 
       maxWidth: '800px', 
       margin: '0 auto',
-      background: '#ffffff'
-    }}>
-      <div style={{ marginBottom: '20px' }}>
-        <Button 
-          icon={<ArrowLeftOutlined />}
-          onClick={() => onNavigate && onNavigate('bdteque')}
-          style={{ marginBottom: '20px' }}
-        >
-          Retour à la BDtèque
-        </Button>
-      </div>
-      
+      background: '#ffffff',
+      minHeight: 'calc(100vh - 64px)'
+    }}>      
       <Card>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>

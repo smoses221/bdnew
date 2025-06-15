@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Navigation from './Navigation';
 import BDHomepageAntd from './BDHomepageAntd';
 import About from './About';
 import Login from './Login';
@@ -51,23 +52,21 @@ const App = () => {
     setCurrentPage('bdteque');
   };
 
+  // Handle navigation
+  const handleNavigate = (page) => {
+    setCurrentPage(page);
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'bdteque':
-        return (
-          <BDHomepageAntd 
-            onNavigate={setCurrentPage} 
-            isAuthenticated={isAuthenticated}
-            currentUser={currentUser}
-            onLogout={handleLogout}
-          />
-        );
+        return <BDHomepageAntd />;
       case 'sur-nous':
-        return <About onNavigate={setCurrentPage} />;
+        return <About onNavigate={handleNavigate} />;
       case 'login':
         return (
           <Login 
-            onNavigate={setCurrentPage}
+            onNavigate={handleNavigate}
             onLoginSuccess={handleLoginSuccess}
           />
         );
@@ -76,9 +75,7 @@ const App = () => {
         if (isAuthenticated && currentUser?.is_admin) {
           return (
             <AdminControlPanel 
-              onNavigate={setCurrentPage}
               currentUser={currentUser}
-              onLogout={handleLogout}
             />
           );
         } else {
@@ -86,24 +83,32 @@ const App = () => {
           setCurrentPage('login');
           return (
             <Login 
-              onNavigate={setCurrentPage}
+              onNavigate={handleNavigate}
               onLoginSuccess={handleLoginSuccess}
             />
           );
         }
       default:
-        return (
-          <BDHomepageAntd 
-            onNavigate={setCurrentPage} 
-            isAuthenticated={isAuthenticated}
-            currentUser={currentUser}
-            onLogout={handleLogout}
-          />
-        );
+        return <BDHomepageAntd />;
     }
   };
 
-  return renderPage();
+  return (
+    <div>
+      {/* Show navigation on all pages */}
+      <Navigation
+        key={`nav-${isAuthenticated}-${currentUser?.id || 'guest'}`}
+        currentPage={currentPage}
+        onNavigate={handleNavigate}
+        isAuthenticated={isAuthenticated}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
+      
+      {/* Page Content */}
+      {renderPage()}
+    </div>
+  );
 };
 
 export default App;

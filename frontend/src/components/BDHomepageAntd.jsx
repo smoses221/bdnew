@@ -1,21 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Table, Input, Typography, Space, Tag, Menu, Button } from 'antd';
-import { 
-  SearchOutlined, 
-  UserOutlined, 
-  HomeOutlined, 
-  TeamOutlined, 
-  InfoCircleOutlined,
-  SettingOutlined,
-  LogoutOutlined,
-  BookOutlined 
-} from '@ant-design/icons';
+import { Table, Input, Typography, Space, Tag } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import './BDHomepageAntd.css';
 
 const { Title, Text } = Typography;
 
-const BDHomepage = ({ onNavigate, isAuthenticated, currentUser, onLogout }) => {
+const BDHomepage = () => {
   const [bds, setBds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -27,7 +18,7 @@ const BDHomepage = ({ onNavigate, isAuthenticated, currentUser, onLogout }) => {
   const [totalCount, setTotalCount] = useState(0);
   const [sortInfo, setSortInfo] = useState({});
   const [selectedMenuItem, setSelectedMenuItem] = useState('bdteque');
-  
+
   const pageSize = 100; // Number of items per page
 
   const API_BASE_URL = 'http://localhost:8000';
@@ -282,64 +273,8 @@ const BDHomepage = ({ onNavigate, isAuthenticated, currentUser, onLogout }) => {
   };
 
   // Menu items configuration
-  // Menu items configuration - includes admin item when authenticated
-  const menuItems = [
-    {
-      key: 'bdteque',
-      icon: <HomeOutlined />,
-      label: 'BDtèque',
-    },
-    {
-      key: 'nos-actis',
-      icon: <TeamOutlined />,
-      label: 'Nos Actis',
-    },
-    {
-      key: 'sur-nous',
-      icon: <InfoCircleOutlined />,
-      label: 'Sur Nous',
-    },
-    // Add admin menu item only if authenticated and user is admin
-    ...(isAuthenticated && currentUser?.is_admin ? [{
-      key: 'admin',
-      icon: <SettingOutlined />,
-      label: 'Admin',
-    }] : []),
-    // Show different login/logout option based on auth status
-    {
-      key: isAuthenticated ? 'logout' : 'login',
-      icon: isAuthenticated ? <LogoutOutlined /> : <UserOutlined />,
-      label: isAuthenticated ? `Logout (${currentUser?.username})` : 'Login',
-    },
-  ];
-
-  const handleMenuClick = ({ key }) => {
-    if (key === 'logout') {
-      onLogout();
-    } else {
-      setSelectedMenuItem(key);
-      onNavigate && onNavigate(key);
-    }
-  };
-
   return (
     <div className="bd-homepage-antd">
-      {/* Navigation Menu */}
-      <div className="top-navigation">
-        <div className="nav-container">
-          <div className="nav-logo">
-            <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>BD Collection</Text>
-          </div>
-          <Menu
-            mode="horizontal"
-            selectedKeys={[selectedMenuItem]}
-            onClick={handleMenuClick}
-            className="top-menu"
-            items={menuItems}
-          />
-        </div>
-      </div>
-
       <div className="bd-header-antd">
         <Title level={1} className="bd-main-title">
           Bibliothèque BD

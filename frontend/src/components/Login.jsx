@@ -22,20 +22,17 @@ import {
 
 const { Title, Text } = Typography;
 
-const Login = ({ onNavigate }) => {
+const Login = ({ onNavigate, onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [setupRequired, setSetupRequired] = useState(false);
   const [checkingSetup, setCheckingSetup] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
 
   const API_BASE_URL = 'http://localhost:8000';
 
-  // Check if admin setup is required and if user is already authenticated
+  // Check if admin setup is required
   useEffect(() => {
     checkSetupStatus();
-    checkAuthStatus();
   }, []);
 
   const checkSetupStatus = async () => {
@@ -51,23 +48,6 @@ const Login = ({ onNavigate }) => {
       message.error('Erreur de connexion au serveur');
     } finally {
       setCheckingSetup(false);
-    }
-  };
-
-  const checkAuthStatus = () => {
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user_data');
-    
-    if (token && userData) {
-      try {
-        const user = JSON.parse(userData);
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-      } catch (error) {
-        // Invalid stored data, clear it
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user_data');
-      }
     }
   };
 
@@ -87,17 +67,16 @@ const Login = ({ onNavigate }) => {
       const data = await response.json();
 
       if (response.ok) {
-        // Store authentication data
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('user_data', JSON.stringify(data.user));
-        
-        setCurrentUser(data.user);
-        setIsAuthenticated(true);
-        message.success('Connexion réussie !');
-        
-        // Call the success callback if provided
+        // Call the success callback to update parent state
         if (onLoginSuccess) {
           onLoginSuccess(data.access_token, data.user);
+        }
+        
+        message.success('Connexion réussie !');
+        
+        // Navigate to main page after successful login
+        if (onNavigate) {
+          onNavigate('bdteque');
         }
       } else {
         message.error(data.detail || 'Erreur de connexion');
@@ -151,14 +130,6 @@ const Login = ({ onNavigate }) => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user_data');
-    setCurrentUser(null);
-    setIsAuthenticated(false);
-    message.success('Déconnexion réussie');
-  };
-
   // Show loading state while checking setup
   if (checkingSetup) {
     return (
@@ -166,7 +137,7 @@ const Login = ({ onNavigate }) => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        minHeight: '80vh',
+        minHeight: 'calc(100vh - 64px)', // Account for navigation height
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         padding: '20px'
       }}>
@@ -177,108 +148,17 @@ const Login = ({ onNavigate }) => {
     );
   }
 
-  // Show authenticated user dashboard
-  if (isAuthenticated && currentUser) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '80vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '20px'
-      }}>
-        <div style={{ width: '100%', maxWidth: 500 }}>
-          <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-            <Button 
-              icon={<ArrowLeftOutlined />}
-              onClick={() => onNavigate && onNavigate('bdteque')}
-              style={{ 
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: 'none',
-                color: 'white'
-              }}
-            >
-              Retour à la BDtèque
-            </Button>
-          </div>
-          
-          <Card 
-            style={{ 
-              width: '100%',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
-            }}
-          >
-            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-              <CheckCircleOutlined style={{ fontSize: '48px', color: '#52c41a', marginBottom: '16px' }} />
-              <Title level={2} style={{ color: '#52c41a', marginBottom: '8px' }}>
-                Connecté avec succès
-              </Title>
-              <Text type="secondary">
-                Panneau d'administration
-              </Text>
-            </div>
-
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              <div style={{ background: '#f5f5f5', padding: '16px', borderRadius: '8px' }}>
-                <Title level={4} style={{ margin: '0 0 8px 0' }}>Informations du compte</Title>
-                <Text><strong>Nom d'utilisateur:</strong> {currentUser.username}</Text><br/>
-                <Text><strong>Email:</strong> {currentUser.email}</Text><br/>
-                <Text><strong>Statut:</strong> {currentUser.is_admin ? 'Administrateur' : 'Utilisateur'}</Text><br/>
-                <Text><strong>Compte créé:</strong> {new Date(currentUser.created_at).toLocaleDateString('fr-FR')}</Text>
-              </div>
-
-              <Alert
-                message="Accès administrateur"
-                description="Vous avez accès à toutes les fonctionnalités d'administration de la BDthèque. Vous pouvez gérer les BD, les membres et les locations."
-                type="success"
-                showIcon
-              />
-
-              <Button 
-                type="primary" 
-                danger
-                block
-                onClick={handleLogout}
-                style={{
-                  height: '45px',
-                  fontSize: '16px'
-                }}
-              >
-                Se déconnecter
-              </Button>
-            </Space>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   // Show login/signup form
   return (
     <div style={{ 
       display: 'flex', 
       justifyContent: 'center', 
       alignItems: 'center', 
-      minHeight: '80vh',
+      minHeight: 'calc(100vh - 64px)', // Account for navigation height
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       padding: '20px'
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-          <Button 
-            icon={<ArrowLeftOutlined />}
-            onClick={() => onNavigate && onNavigate('bdteque')}
-            style={{ 
-              background: 'rgba(255, 255, 255, 0.2)',
-              border: 'none',
-              color: 'white'
-            }}
-          >
-            Retour à la BDtèque
-          </Button>
-        </div>
-        
         <Card 
           style={{ 
             width: '100%',
