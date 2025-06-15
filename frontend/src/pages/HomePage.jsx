@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useContext } from 'react';
 import { Table, Input, Typography, Space, Tag, Menu, Button } from 'antd';
 import { 
   SearchOutlined, 
@@ -11,12 +11,13 @@ import {
   BookOutlined 
 } from '@ant-design/icons';
 import axios from 'axios';
-import './BDHomepageAntd.css';
-import NavigationBar from './NavigationBar';
+import { UserContext } from '../context/UserContext';
+import '../styles/pages/HomePage.css';
 
 const { Title, Text } = Typography;
 
-const BDHomepage = ({ onNavigate, currentUser, onLogout }) => {
+const HomePage = () => {
+  const { currentUser } = useContext(UserContext);
   const [bds, setBds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -282,21 +283,19 @@ const BDHomepage = ({ onNavigate, currentUser, onLogout }) => {
   };
 
   return (
-    <>
-      <NavigationBar currentUser={currentUser} onNavigate={onNavigate} onLogout={onLogout} />
-      <div className="bd-homepage-antd">
-        <div className="bd-header-antd">
-          <Title level={1} className="bd-main-title">
-            Bibliothèque BD
-          </Title>
-          <Text className="bd-subtitle">
-            Découvrez notre collection de bandes dessinées
-            {totalCount > 0 && (
-              <span style={{ marginLeft: '8px', color: '#1890ff', fontWeight: '500' }}>
-                ({bds.length} / {totalCount})
-              </span>
-            )}
-          </Text>
+    <div className="bd-homepage-antd">
+      <div className="bd-header-antd">
+        <Title level={1} className="bd-main-title">
+          Bibliothèque BD
+        </Title>
+        <Text className="bd-subtitle">
+          Découvrez notre collection de bandes dessinées
+          {totalCount > 0 && (
+            <span style={{ marginLeft: '8px', color: '#1890ff', fontWeight: '500' }}>
+              ({bds.length} / {totalCount})
+            </span>
+          )}
+        </Text>
           
           <Space.Compact size="large" className="search-container">
             <Input
@@ -353,8 +352,7 @@ const BDHomepage = ({ onNavigate, currentUser, onLogout }) => {
           )}
         </div>
       </div>
-    </>
   );
 };
 
-export default BDHomepage;
+export default HomePage;

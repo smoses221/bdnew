@@ -1,32 +1,33 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Space, Divider, Button } from 'antd';
 import { InfoCircleOutlined, HeartOutlined, BookOutlined, ArrowLeftOutlined } from '@ant-design/icons';
-import NavigationBar from './NavigationBar';
+import '../styles/pages/AboutPage.css';
 
 const { Title, Paragraph, Text } = Typography;
 
-const About = ({ onNavigate, currentUser, onLogout }) => {
+const AboutPage = () => {
+  const navigate = useNavigate();
+
   return (
-    <>
-      <NavigationBar currentUser={currentUser} onNavigate={onNavigate} onLogout={onLogout} />
-      <div style={{ 
-        padding: '40px 20px', 
-        maxWidth: '800px', 
-        margin: '0 auto',
-        background: '#ffffff'
-      }}>
-        <div style={{ marginBottom: '20px' }}>
-          <Button 
-            icon={<ArrowLeftOutlined />}
-            onClick={() => onNavigate && onNavigate('bdteque')}
-            style={{ marginBottom: '20px' }}
-          >
-            Retour à la BDtèque
-          </Button>
-        </div>
+    <div style={{ 
+      padding: '40px 20px', 
+      maxWidth: '800px', 
+      margin: '0 auto',
+      background: '#ffffff'
+    }}>
+      <div style={{ marginBottom: '20px' }}>
+        <Button 
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate('/bdteque')}
+          style={{ marginBottom: '20px' }}
+        >
+          Retour à la BDtèque
+        </Button>
+      </div>
         
-        <Card>
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Card>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
             <div style={{ textAlign: 'center', marginBottom: '30px' }}>
               <Title level={1} style={{ color: '#1890ff', marginBottom: '8px' }}>
                 <BookOutlined /> Sur Nous
@@ -93,8 +94,7 @@ const About = ({ onNavigate, currentUser, onLogout }) => {
           </Space>
         </Card>
       </div>
-    </>
   );
 };
 
-export default About;
+export default AboutPage;

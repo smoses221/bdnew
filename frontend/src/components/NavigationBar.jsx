@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { Menu } from 'antd';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   HomeOutlined,
   TeamOutlined,
@@ -9,10 +10,15 @@ import {
   LoginOutlined,
 } from '@ant-design/icons';
 import { UserContext } from '../context/UserContext';
-import './NavigationBar.css';
+import '../styles/components/NavigationBar.css';
 
-const NavigationBar = ({ onNavigate }) => {
+const NavigationBar = () => {
   const { currentUser, isAuthenticated, handleLogout } = useContext(UserContext);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get current path to highlight active menu item
+  const currentPath = location.pathname.substring(1) || 'bdteque';
 
   const menuItems = [
     {
@@ -47,10 +53,11 @@ const NavigationBar = ({ onNavigate }) => {
   const handleMenuClick = ({ key }) => {
     if (key === 'logout') {
       handleLogout();
+      navigate('/bdteque');
     } else if (key === 'login') {
-      onNavigate('login');
+      navigate('/login');
     } else {
-      onNavigate(key);
+      navigate(`/${key}`);
     }
   };
 
@@ -58,6 +65,7 @@ const NavigationBar = ({ onNavigate }) => {
     <div className="navigation-bar-right">
       <Menu
         mode="horizontal"
+        selectedKeys={[currentPath]}
         onClick={handleMenuClick}
         items={menuItems}
       />

@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Layout, 
   Typography, 
@@ -21,14 +22,18 @@ import {
   CalendarOutlined,
   ArrowLeftOutlined
 } from '@ant-design/icons';
-import NavigationBar from './NavigationBar';
 import { UserContext } from '../context/UserContext';
+import '../styles/pages/AdminPage.css';
+import BDsSection from './AdminSections/BDsSection';
+import AbonnementsSection from './AdminSections/AbonnementsSection';
+import LocationsSection from './AdminSections/LocationsSection';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-const AdminControlPanel = ({ onNavigate }) => {
+const AdminPage = () => {
   const { currentUser } = useContext(UserContext);
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('bds');
 
   // Control panel section buttons
@@ -59,58 +64,67 @@ const AdminControlPanel = ({ onNavigate }) => {
   const handleSectionChange = (sectionKey) => {
     setActiveSection(sectionKey);
   };
-
+  
   const renderSectionContent = () => {
     switch (activeSection) {
       case 'bds':
-        return (
-          <Card>
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <BookOutlined style={{ fontSize: '64px', color: '#1890ff', marginBottom: '16px' }} />
-              <Title level={3}>Gestion des BDs</Title>
-              <Text type="secondary">
-                Cette section permettra de gérer la collection de bandes dessinées :<br/>
-                ajouter, modifier, supprimer des BD, gérer les cotes, etc.
-              </Text>
-            </div>
-          </Card>
-        );
+        return <BDsSection />;
       case 'abonnements':
-        return (
-          <Card>
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <UserOutlined style={{ fontSize: '64px', color: '#52c41a', marginBottom: '16px' }} />
-              <Title level={3}>Gestion des Abonnements</Title>
-              <Text type="secondary">
-                Cette section permettra de gérer les membres :<br/>
-                ajouter des membres, gérer les abonnements, les cautions, etc.
-              </Text>
-            </div>
-          </Card>
-        );
+        return <AbonnementsSection />;
       case 'locations':
-        return (
-          <Card>
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <CalendarOutlined style={{ fontSize: '64px', color: '#fa8c16', marginBottom: '16px' }} />
-              <Title level={3}>Gestion des Locations</Title>
-              <Text type="secondary">
-                Cette section permettra de gérer les prêts :<br/>
-                enregistrer les prêts, gérer les retours, suivre les retards, etc.
-              </Text>
-            </div>
-          </Card>
-        );
+        return <LocationsSection />;
       default:
         return null;
     }
   };
+  // const renderSectionContent = () => {
+  //   switch (activeSection) {
+  //     case 'bds':
+  //       return (
+  //         <Card>
+  //           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+  //             <BookOutlined style={{ fontSize: '64px', color: '#1890ff', marginBottom: '16px' }} />
+  //             <Title level={3}>Gestion des BDs</Title>
+  //             <Text type="secondary">
+  //               Cette section permettra de gérer la collection de bandes dessinées :<br/>
+  //               ajouter, modifier, supprimer des BD, gérer les cotes, etc.
+  //             </Text>
+  //           </div>
+  //         </Card>
+  //       );
+  //     case 'abonnements':
+  //       return (
+  //         <Card>
+  //           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+  //             <UserOutlined style={{ fontSize: '64px', color: '#52c41a', marginBottom: '16px' }} />
+  //             <Title level={3}>Gestion des Abonnements</Title>
+  //             <Text type="secondary">
+  //               Cette section permettra de gérer les membres :<br/>
+  //               ajouter des membres, gérer les abonnements, les cautions, etc.
+  //             </Text>
+  //           </div>
+  //         </Card>
+  //       );
+  //     case 'locations':
+  //       return (
+  //         <Card>
+  //           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+  //             <CalendarOutlined style={{ fontSize: '64px', color: '#fa8c16', marginBottom: '16px' }} />
+  //             <Title level={3}>Gestion des Locations</Title>
+  //             <Text type="secondary">
+  //               Cette section permettra de gérer les prêts :<br/>
+  //               enregistrer les prêts, gérer les retours, suivre les retards, etc.
+  //             </Text>
+  //           </div>
+  //         </Card>
+  //       );
+  //     default:
+  //       return null;
+  //   }
+  // };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {/* Top Navigation */}
-      <NavigationBar currentUser={currentUser} onNavigate={onNavigate} />
-
       <Content style={{ padding: '24px', background: '#f5f5f5' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           {/* Breadcrumb */}
@@ -140,7 +154,7 @@ const AdminControlPanel = ({ onNavigate }) => {
               </div>
               <Button 
                 icon={<ArrowLeftOutlined />}
-                onClick={() => onNavigate('bdteque')}
+                onClick={() => navigate('/bdteque')}
                 size="large"
               >
                 Retour à la BDtèque
@@ -208,4 +222,4 @@ const AdminControlPanel = ({ onNavigate }) => {
   );
 };
 
-export default AdminControlPanel;
+export default AdminPage;

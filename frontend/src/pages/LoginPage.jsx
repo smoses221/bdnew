@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Form, 
   Input, 
@@ -20,11 +21,17 @@ import {
   UserAddOutlined
 } from '@ant-design/icons';
 import { UserContext } from '../context/UserContext';
+import '../styles/pages/LoginPage.css';
 
 const { Title, Text } = Typography;
 
-const Login = ({ onNavigate }) => {
+const LoginPage = () => {
   const { handleLoginSuccess } = useContext(UserContext);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the redirect path from location state, default to /bdteque
+  const from = location.state?.from?.pathname || '/bdteque';
 
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
@@ -103,6 +110,9 @@ const Login = ({ onNavigate }) => {
         if (handleLoginSuccess) {
           handleLoginSuccess(data.access_token, data.user);
         }
+        
+        // Navigate to the intended destination or home
+        navigate(from, { replace: true });
       } else {
         message.error(data.detail || 'Erreur de connexion');
       }
@@ -196,7 +206,7 @@ const Login = ({ onNavigate }) => {
           <div style={{ marginBottom: '20px', textAlign: 'center' }}>
             <Button 
               icon={<ArrowLeftOutlined />}
-              onClick={() => onNavigate && onNavigate('bdteque')}
+              onClick={() => navigate('/bdteque')}
               style={{ 
                 background: 'rgba(255, 255, 255, 0.2)',
                 border: 'none',
@@ -272,7 +282,7 @@ const Login = ({ onNavigate }) => {
         <div style={{ marginBottom: '20px', textAlign: 'center' }}>
           <Button 
             icon={<ArrowLeftOutlined />}
-            onClick={() => onNavigate && onNavigate('bdteque')}
+            onClick={() => navigate('/bdteque')}
             style={{ 
               background: 'rgba(255, 255, 255, 0.2)',
               border: 'none',
@@ -411,4 +421,4 @@ const Login = ({ onNavigate }) => {
   );
 };
 
-export default Login;
+export default LoginPage;
