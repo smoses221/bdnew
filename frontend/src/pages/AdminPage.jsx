@@ -24,6 +24,9 @@ import {
 } from '@ant-design/icons';
 import { UserContext } from '../context/UserContext';
 import '../styles/pages/AdminPage.css';
+import BDsSection from './AdminSections/BDsSection';
+import AbonnementsSection from './AdminSections/AbonnementsSection';
+import LocationsSection from './AdminSections/LocationsSection';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -61,52 +64,64 @@ const AdminPage = () => {
   const handleSectionChange = (sectionKey) => {
     setActiveSection(sectionKey);
   };
-
+  
   const renderSectionContent = () => {
     switch (activeSection) {
       case 'bds':
-        return (
-          <Card>
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <BookOutlined style={{ fontSize: '64px', color: '#1890ff', marginBottom: '16px' }} />
-              <Title level={3}>Gestion des BDs</Title>
-              <Text type="secondary">
-                Cette section permettra de gérer la collection de bandes dessinées :<br/>
-                ajouter, modifier, supprimer des BD, gérer les cotes, etc.
-              </Text>
-            </div>
-          </Card>
-        );
+        return <BDsSection />;
       case 'abonnements':
-        return (
-          <Card>
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <UserOutlined style={{ fontSize: '64px', color: '#52c41a', marginBottom: '16px' }} />
-              <Title level={3}>Gestion des Abonnements</Title>
-              <Text type="secondary">
-                Cette section permettra de gérer les membres :<br/>
-                ajouter des membres, gérer les abonnements, les cautions, etc.
-              </Text>
-            </div>
-          </Card>
-        );
+        return <AbonnementsSection />;
       case 'locations':
-        return (
-          <Card>
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <CalendarOutlined style={{ fontSize: '64px', color: '#fa8c16', marginBottom: '16px' }} />
-              <Title level={3}>Gestion des Locations</Title>
-              <Text type="secondary">
-                Cette section permettra de gérer les prêts :<br/>
-                enregistrer les prêts, gérer les retours, suivre les retards, etc.
-              </Text>
-            </div>
-          </Card>
-        );
+        return <LocationsSection />;
       default:
         return null;
     }
   };
+  // const renderSectionContent = () => {
+  //   switch (activeSection) {
+  //     case 'bds':
+  //       return (
+  //         <Card>
+  //           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+  //             <BookOutlined style={{ fontSize: '64px', color: '#1890ff', marginBottom: '16px' }} />
+  //             <Title level={3}>Gestion des BDs</Title>
+  //             <Text type="secondary">
+  //               Cette section permettra de gérer la collection de bandes dessinées :<br/>
+  //               ajouter, modifier, supprimer des BD, gérer les cotes, etc.
+  //             </Text>
+  //           </div>
+  //         </Card>
+  //       );
+  //     case 'abonnements':
+  //       return (
+  //         <Card>
+  //           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+  //             <UserOutlined style={{ fontSize: '64px', color: '#52c41a', marginBottom: '16px' }} />
+  //             <Title level={3}>Gestion des Abonnements</Title>
+  //             <Text type="secondary">
+  //               Cette section permettra de gérer les membres :<br/>
+  //               ajouter des membres, gérer les abonnements, les cautions, etc.
+  //             </Text>
+  //           </div>
+  //         </Card>
+  //       );
+  //     case 'locations':
+  //       return (
+  //         <Card>
+  //           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+  //             <CalendarOutlined style={{ fontSize: '64px', color: '#fa8c16', marginBottom: '16px' }} />
+  //             <Title level={3}>Gestion des Locations</Title>
+  //             <Text type="secondary">
+  //               Cette section permettra de gérer les prêts :<br/>
+  //               enregistrer les prêts, gérer les retours, suivre les retards, etc.
+  //             </Text>
+  //           </div>
+  //         </Card>
+  //       );
+  //     default:
+  //       return null;
+  //   }
+  // };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
