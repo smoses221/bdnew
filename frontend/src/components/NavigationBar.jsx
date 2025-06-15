@@ -44,8 +44,6 @@ const NavigationBar = ({ currentUser, onNavigate, onLogout }) => {
   const handleMenuClick = ({ key }) => {
     if (key === 'logout') {
       onLogout();
-    } else if (key === 'login') {
-      onNavigate('login');
     } else {
       onNavigate(key);
     }
