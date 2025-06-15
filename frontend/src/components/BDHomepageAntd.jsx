@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import './BDHomepageAntd.css';
+import NavigationBar from './NavigationBar';
 
 const { Title, Text } = Typography;
 
@@ -26,7 +27,6 @@ const BDHomepage = ({ onNavigate, isAuthenticated, currentUser, onLogout }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [sortInfo, setSortInfo] = useState({});
-  const [selectedMenuItem, setSelectedMenuItem] = useState('bdteque');
   
   const pageSize = 100; // Number of items per page
 
@@ -281,133 +281,79 @@ const BDHomepage = ({ onNavigate, isAuthenticated, currentUser, onLogout }) => {
     });
   };
 
-  // Menu items configuration
-  // Menu items configuration - includes admin item when authenticated
-  const menuItems = [
-    {
-      key: 'bdteque',
-      icon: <HomeOutlined />,
-      label: 'BDtèque',
-    },
-    {
-      key: 'nos-actis',
-      icon: <TeamOutlined />,
-      label: 'Nos Actis',
-    },
-    {
-      key: 'sur-nous',
-      icon: <InfoCircleOutlined />,
-      label: 'Sur Nous',
-    },
-    // Add admin menu item only if authenticated and user is admin
-    ...(isAuthenticated && currentUser?.is_admin ? [{
-      key: 'admin',
-      icon: <SettingOutlined />,
-      label: 'Admin',
-    }] : []),
-    // Show different login/logout option based on auth status
-    {
-      key: isAuthenticated ? 'logout' : 'login',
-      icon: isAuthenticated ? <LogoutOutlined /> : <UserOutlined />,
-      label: isAuthenticated ? `Logout (${currentUser?.username})` : 'Login',
-    },
-  ];
-
-  const handleMenuClick = ({ key }) => {
-    if (key === 'logout') {
-      onLogout();
-    } else {
-      setSelectedMenuItem(key);
-      onNavigate && onNavigate(key);
-    }
-  };
-
   return (
-    <div className="bd-homepage-antd">
-      {/* Navigation Menu */}
-      <div className="top-navigation">
-        <div className="nav-container">
-          <div className="nav-logo">
-            <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>BD Collection</Text>
-          </div>
-          <Menu
-            mode="horizontal"
-            selectedKeys={[selectedMenuItem]}
-            onClick={handleMenuClick}
-            className="top-menu"
-            items={menuItems}
+    <>
+      <NavigationBar currentUser={currentUser} onNavigate={onNavigate} onLogout={onLogout} />
+      <div className="bd-homepage-antd">
+        <div className="bd-header-antd">
+          <Title level={1} className="bd-main-title">
+            Bibliothèque BD
+          </Title>
+          <Text className="bd-subtitle">
+            Découvrez notre collection de bandes dessinées
+            {totalCount > 0 && (
+              <span style={{ marginLeft: '8px', color: '#1890ff', fontWeight: '500' }}>
+                ({bds.length} / {totalCount})
+              </span>
+            )}
+          </Text>
+          
+          <Space.Compact size="large" className="search-container">
+            <Input
+              placeholder={searching ? "Recherche en cours..." : "Rechercher..."}
+              prefix={<SearchOutlined spin={searching} />}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              allowClear
+              size="middle"
+              style={{ 
+                width: '100%',
+                opacity: searching ? 0.7 : 1
+              }}
+            />
+          </Space.Compact>
+        </div>
+
+        <div className="bd-content-antd">
+          <Table
+            columns={columns}
+            dataSource={bds}
+            rowKey="bid"
+            loading={loading}
+            pagination={false}
+            onChange={handleTableChange}
+            scroll={{ 
+              x: 800,
+              y: 'calc(100vh - 160px)'
+            }}
+            size="small"
+            bordered={false}
+            className="bd-table-antd"
+            onScroll={handleScroll}
           />
+          {loadingMore && (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '16px',
+              background: '#fafafa',
+              borderTop: '1px solid #e8e8e8'
+            }}>
+              <Text type="secondary">Chargement...</Text>
+            </div>
+          )}
+          {!hasMore && bds.length > 0 && (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '16px',
+              background: '#fafafa',
+              borderTop: '1px solid #e8e8e8'
+            }}>
+              <Text type="secondary">Toutes les BD ont été affichées</Text>
+            </div>
+          )}
         </div>
       </div>
-
-      <div className="bd-header-antd">
-        <Title level={1} className="bd-main-title">
-          Bibliothèque BD
-        </Title>
-        <Text className="bd-subtitle">
-          Découvrez notre collection de bandes dessinées
-          {totalCount > 0 && (
-            <span style={{ marginLeft: '8px', color: '#1890ff', fontWeight: '500' }}>
-              ({bds.length} / {totalCount})
-            </span>
-          )}
-        </Text>
-        
-        <Space.Compact size="large" className="search-container">
-          <Input
-            placeholder={searching ? "Recherche en cours..." : "Rechercher..."}
-            prefix={<SearchOutlined spin={searching} />}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            allowClear
-            size="middle"
-            style={{ 
-              width: '100%',
-              opacity: searching ? 0.7 : 1
-            }}
-          />
-        </Space.Compact>
-      </div>
-
-      <div className="bd-content-antd">
-        <Table
-          columns={columns}
-          dataSource={bds}
-          rowKey="bid"
-          loading={loading}
-          pagination={false}
-          onChange={handleTableChange}
-          scroll={{ 
-            x: 800,
-            y: 'calc(100vh - 160px)'
-          }}
-          size="small"
-          bordered={false}
-          className="bd-table-antd"
-          onScroll={handleScroll}
-        />
-        {loadingMore && (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '16px',
-            background: '#fafafa',
-            borderTop: '1px solid #e8e8e8'
-          }}>
-            <Text type="secondary">Chargement...</Text>
-          </div>
-        )}
-        {!hasMore && bds.length > 0 && (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '16px',
-            background: '#fafafa',
-            borderTop: '1px solid #e8e8e8'
-          }}>
-            <Text type="secondary">Toutes les BD ont été affichées</Text>
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 };
 

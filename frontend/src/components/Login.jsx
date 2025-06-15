@@ -32,6 +32,14 @@ const Login = ({ onNavigate }) => {
 
   const API_BASE_URL = 'http://localhost:8000';
 
+  const onLoginSuccess = (token, user) => {
+    localStorage.setItem('access_token', token);
+    localStorage.setItem('user_data', JSON.stringify(user));
+    setIsAuthenticated(true);
+    setCurrentUser(user);
+    onNavigate('bdteque');
+  };
+
   // Check if admin setup is required and if user is already authenticated
   useEffect(() => {
     checkSetupStatus();
@@ -72,6 +80,7 @@ const Login = ({ onNavigate }) => {
   };
 
   const handleLogin = async (values) => {
+    setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
