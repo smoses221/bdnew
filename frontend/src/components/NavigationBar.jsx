@@ -6,6 +6,7 @@ import {
   InfoCircleOutlined,
   SettingOutlined,
   LogoutOutlined,
+  LoginOutlined,
 } from '@ant-design/icons';
 import './NavigationBar.css';
 
@@ -35,7 +36,7 @@ const NavigationBar = ({ currentUser, onNavigate, onLogout }) => {
     ] : []),
     {
       key: currentUser ? 'logout' : 'login',
-      icon: currentUser ? <LogoutOutlined /> : <HomeOutlined />,
+      icon: currentUser ? <LogoutOutlined /> : <LoginOutlined />,
       label: currentUser ? `Logout (${currentUser?.username || 'Guest'})` : 'Login',
     },
   ];
