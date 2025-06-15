@@ -1,2 +1,2 @@
 # Install dependencies for backend
-pip install fastapi uvicorn sqlalchemy pymysql cryptography
+pip install fastapi uvicorn sqlalchemy pymysql cryptography python-jose[cryptography] passlib[bcrypt] python-multipart

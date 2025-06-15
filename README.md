@@ -11,8 +11,7 @@
 
 ## Setup
 
-### Backend
-Use docker 
+### BackendSetup the docker with 
  docker run -d \
   --name mysql-bookdb \
   -e MYSQL_ROOT_PASSWORD=rootpassword \
@@ -22,11 +21,14 @@ Use docker
   -p 3306:3306 \
   mysql:8.0 \
   --default-authentication-plugin=mysql_native_password
+  
+  
 1. `cd backend`
-2. `python -m venv venv && source venv/bin/activate`
-3. `pip install -r requirements.txt`
-4. Copy `.env.example` to `.env` and set your DB credentials
-5. `uvicorn app.main:app --reload`
+2. `python -m venv venv`
+3. `source venv/bin/activate`
+4. `pip install -r requirements.txt`
+5. Copy `.env.example` to `.env` and set your DB credentials
+6. `python3 -m uvicorn app.main:app --reload`
 
 ### Frontend
 1. `cd frontend`
