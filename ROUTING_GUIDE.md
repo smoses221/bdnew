@@ -16,6 +16,10 @@ src/
 │   ├── LoginPage.jsx   # Authentication page
 │   ├── AdminPage.jsx   # Admin control panel
 │   └── NosActisPage.jsx
+|   └── AdminSections/
+│       ├── AbonnementsSection.jsx
+│       ├── BDsSection.jsx
+│       └── LocationsSection.jsx
 ├── routes/             # Routing configuration
 │   ├── AppRoutes.jsx   # Main route definitions
 │   └── ProtectedRoute.jsx # Auth guard for protected routes

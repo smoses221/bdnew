@@ -3,7 +3,8 @@ import { Typography, Card } from 'antd';
 import { BookOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
-
+// This section is for managing the collection of comic books (BDs).
+// It allows adding, modifying, deleting BDs.
 const BDsSection = () => (
   <Card>
     <div style={{ textAlign: 'center', padding: '60px 20px' }}>

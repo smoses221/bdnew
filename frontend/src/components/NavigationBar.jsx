@@ -45,7 +45,7 @@ const NavigationBar = () => {
     ] : []),
     {
       key: isAuthenticated ? 'logout' : 'login',
-      icon: isAuthenticated ? <LogoutOutlined /> : <HomeOutlined />,
+      icon: isAuthenticated ? <LogoutOutlined /> : <LoginOutlined />,
       label: isAuthenticated ? `Logout (${currentUser?.username || 'Guest'})` : 'Login',
     },
   ];
