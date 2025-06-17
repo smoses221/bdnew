@@ -57,6 +57,25 @@ const AbonnementsSection = () => {
 
   const API_BASE_URL = 'http://localhost:8000';
 
+  // Inject CSS for rented rows
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .rented-row {
+        background-color: #f5f5f5 !important;
+        opacity: 0.6;
+      }
+      .rented-row:hover {
+        background-color: #f0f0f0 !important;
+      }
+      .rented-row td {
+        color: #999 !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
   const getAuthHeaders = () => ({
     'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
     'Content-Type': 'application/json',
@@ -407,19 +426,29 @@ const AbonnementsSection = () => {
     {
       title: 'Action',
       key: 'action',
-      render: (_, record) => (
-        <Popconfirm
-          title="Louer ce livre"
-          description={`Louer "${record.titreserie}" à ${memberDetails?.nom} ${memberDetails?.prenom}?`}
-          onConfirm={() => rentBookToMember(record.bid)}
-          okText="Oui"
-          cancelText="Non"
-        >
-          <Button type="primary" size="small" icon={<PlusOutlined />}>
-            Louer
-          </Button>
-        </Popconfirm>
-      ),
+      render: (_, record) => {
+        if (record.is_rented) {
+          return (
+            <span style={{ color: '#999', fontStyle: 'italic' }}>
+              Déjà loué {record.rented_by ? `par ${record.rented_by}` : ''}
+            </span>
+          );
+        }
+        
+        return (
+          <Popconfirm
+            title="Louer ce livre"
+            description={`Louer "${record.titreserie}" à ${memberDetails?.nom} ${memberDetails?.prenom}?`}
+            onConfirm={() => rentBookToMember(record.bid)}
+            okText="Oui"
+            cancelText="Non"
+          >
+            <Button type="primary" size="small" icon={<PlusOutlined />}>
+              Louer
+            </Button>
+          </Popconfirm>
+        );
+      },
     },
   ];
 
@@ -643,6 +672,7 @@ const AbonnementsSection = () => {
           columns={bdColumns}
           dataSource={availableBDs}
           rowKey="bid"
+          rowClassName={(record) => record.is_rented ? 'rented-row' : ''}
           pagination={{
             ...bdPagination,
             showSizeChanger: false,

@@ -142,7 +142,7 @@ def check_setup(db: Session = Depends(get_db)):
     return {"setup_required": user_count == 0}
 
 # Protected routes (require authentication)
-@router.get("/admin/bds/", response_model=list[schemas.BDBase])
+@router.get("/admin/bds/")
 def admin_list_bds(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(20, ge=1, le=100, description="Number of records to return"),
@@ -152,7 +152,7 @@ def admin_list_bds(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Protected admin endpoint for listing BDs."""
+    """Protected admin endpoint for listing BDs with rental status."""
     if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -209,7 +209,46 @@ def admin_list_bds(
             cast(models.BD.numtome, Integer).asc()
         )
     
-    return query.offset(skip).limit(limit).all()
+    bds = query.offset(skip).limit(limit).all()
+    
+    # Add rental status to each BD
+    result = []
+    for bd in bds:
+        # Check if this BD is currently rented
+        active_rental = db.query(models.Locations).filter(
+            models.Locations.bid == bd.bid,
+            models.Locations.fin.is_(None)
+        ).first()
+        
+        bd_dict = {
+            "bid": bd.bid,
+            "cote": bd.cote,
+            "titreserie": bd.titreserie,
+            "titrealbum": bd.titrealbum,
+            "numtome": bd.numtome,
+            "scenariste": bd.scenariste,
+            "dessinateur": bd.dessinateur,
+            "collection": bd.collection,
+            "editeur": bd.editeur,
+            "genre": bd.genre,
+            "date_creation": bd.date_creation,
+            "date_modification": bd.date_modification,
+            "titre_norm": bd.titre_norm,
+            "serie_norm": bd.serie_norm,
+            "ISBN": bd.ISBN,
+            "is_rented": active_rental is not None,
+            "rented_by": None
+        }
+        
+        # If rented, add information about who rented it
+        if active_rental:
+            member = db.query(models.Membres).filter(models.Membres.mid == active_rental.mid).first()
+            if member:
+                bd_dict["rented_by"] = f"{member.nom} {member.prenom}"
+        
+        result.append(bd_dict)
+    
+    return result
 
 # Protected admin routes (require authentication and admin privileges)
 @router.get("/admin/stats")
