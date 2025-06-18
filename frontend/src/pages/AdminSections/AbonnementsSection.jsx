@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import MembersList from '../../components/MemberManagement/MembersList';
 import NewMemberModal from '../../components/MemberManagement/NewMemberModal';
 import MemberDetails from '../../components/MemberManagement/MemberDetails';
+import MemberRentalHistoryTable from '../../components/MemberManagement/MemberRentalHistoryTable';
 
 // Custom hook
 import { useMemberManagement } from '../../hooks/useMemberManagement';
@@ -23,6 +24,7 @@ const AbonnementsSection = () => {
   const [members, setMembers] = useState([]);
   const [memberDetails, setMemberDetails] = useState(null);
   const [memberRentals, setMemberRentals] = useState([]);
+  const [memberRentalHistory, setMemberRentalHistory] = useState([]);
   const [availableBDs, setAvailableBDs] = useState([]);
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [bdSearchTerm, setBdSearchTerm] = useState('');
@@ -36,6 +38,11 @@ const AbonnementsSection = () => {
     pageSize: 25,
     total: 0,
   });
+  const [historyPagination, setHistoryPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
   const [editForm] = Form.useForm();
   
   // Use the custom hook for API functions
@@ -44,6 +51,7 @@ const AbonnementsSection = () => {
     fetchMembers: fetchMembersAPI,
     fetchMemberDetails: fetchMemberDetailsAPI,
     fetchMemberRentals: fetchMemberRentalsAPI,
+    fetchMemberRentalHistory: fetchMemberRentalHistoryAPI,
     fetchAvailableBDs: fetchAvailableBDsAPI,
     createMember,
     updateMember,
@@ -78,6 +86,20 @@ const AbonnementsSection = () => {
   const fetchMemberRentals = async (memberId) => {
     const result = await fetchMemberRentalsAPI(memberId);
     setMemberRentals(result);
+    return result;
+  };
+
+  // Fetch member rental history wrapper
+  const fetchMemberRentalHistory = async (memberId, page = 1) => {
+    const result = await fetchMemberRentalHistoryAPI(memberId, page, historyPagination.pageSize);
+    if (result) {
+      setMemberRentalHistory(result.rentals || []);
+      setHistoryPagination(prev => ({
+        ...prev,
+        current: page,
+        total: result.total || 0,
+      }));
+    }
     return result;
   };
 
@@ -131,6 +153,7 @@ const AbonnementsSection = () => {
       setSelectedMember(record.mid);
       await fetchMemberDetails(record.mid);
       await fetchMemberRentals(record.mid);
+      await fetchMemberRentalHistory(record.mid);
       await fetchAvailableBDs(1, bdSearchTerm);
       setIsEditing(false);
       setHasUnsavedChanges(false);
@@ -212,6 +235,7 @@ const AbonnementsSection = () => {
     if (success) {
       // Refresh data
       await fetchMemberRentals(selectedMember);
+      await fetchMemberRentalHistory(selectedMember, historyPagination.current);
       await fetchMembers(pagination.current, memberSearchTerm);
       await fetchAvailableBDs(bdPagination.current, bdSearchTerm);
     }
@@ -223,6 +247,7 @@ const AbonnementsSection = () => {
     if (success) {
       // Refresh data
       await fetchMemberRentals(selectedMember);
+      await fetchMemberRentalHistory(selectedMember, historyPagination.current);
       await fetchMembers(pagination.current, memberSearchTerm);
       await fetchAvailableBDs(bdPagination.current, bdSearchTerm);
     }
@@ -250,6 +275,11 @@ const AbonnementsSection = () => {
   // Handle pagination change for BDs
   const handleBDPaginationChange = (paginationInfo) => {
     fetchAvailableBDs(paginationInfo.current, bdSearchTerm);
+  };
+
+  // Handle pagination change for rental history
+  const handleHistoryPaginationChange = (paginationInfo) => {
+    fetchMemberRentalHistory(selectedMember, paginationInfo.current);
   };
 
   // Handle BD search
@@ -392,6 +422,59 @@ const AbonnementsSection = () => {
     },
   ];
 
+  // Define rental history columns
+  const historyColumns = [
+    {
+      title: 'Cote',
+      dataIndex: ['bd_info', 'cote'],
+      key: 'cote',
+      width: 100,
+    },
+    {
+      title: 'Série',
+      dataIndex: ['bd_info', 'titreserie'],
+      key: 'titreserie',
+      ellipsis: true,
+    },
+    {
+      title: 'Album',
+      dataIndex: ['bd_info', 'titrealbum'],
+      key: 'titrealbum',
+      ellipsis: true,
+    },
+    {
+      title: 'Tome',
+      dataIndex: ['bd_info', 'numtome'],
+      key: 'numtome',
+      width: 60,
+      align: 'center',
+    },
+    {
+      title: 'Date de location',
+      dataIndex: 'date_location',
+      key: 'date_location',
+      width: 120,
+      render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : '-',
+    },
+    {
+      title: 'Date de retour',
+      dataIndex: 'date_retour',
+      key: 'date_retour',
+      width: 120,
+      render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : '-',
+    },
+    {
+      title: 'Statut',
+      key: 'status',
+      width: 80,
+      render: (_, record) => (
+        <Tag color={record.date_retour ? 'green' : 'orange'}>
+          {record.date_retour ? 'Retourné' : 'En cours'}
+        </Tag>
+      ),
+    },
+  ];
+
   if (!selectedMember) {
     // Show members list
     return (
@@ -429,11 +512,14 @@ const AbonnementsSection = () => {
       hasUnsavedChanges={hasUnsavedChanges}
       setHasUnsavedChanges={setHasUnsavedChanges}
       memberRentals={memberRentals}
+      memberRentalHistory={memberRentalHistory}
       availableBDs={availableBDs}
       bdSearchTerm={bdSearchTerm}
       setBdSearchTerm={setBdSearchTerm}
       bdPagination={bdPagination}
+      historyPagination={historyPagination}
       rentalColumns={rentalColumns}
+      historyColumns={historyColumns}
       bdColumns={bdColumns}
       onBackToList={handleBackToList}
       onSaveMember={handleSaveMember}
@@ -441,6 +527,7 @@ const AbonnementsSection = () => {
       onFormChange={handleFormChange}
       onSearchBDs={handleBDSearch}
       onBDPaginationChange={handleBDPaginationChange}
+      onHistoryPaginationChange={handleHistoryPaginationChange}
     />
   );
 };

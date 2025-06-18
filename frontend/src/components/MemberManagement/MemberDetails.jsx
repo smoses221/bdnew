@@ -3,6 +3,7 @@ import { Button, Card, Form, Row, Col, Input, Space } from 'antd';
 import { UndoOutlined, EditOutlined, SaveOutlined } from '@ant-design/icons';
 import MemberRentalsTable from './MemberRentalsTable';
 import AvailableBDsTable from './AvailableBDsTable';
+import MemberRentalHistoryTable from './MemberRentalHistoryTable';
 
 const MemberDetails = ({
   memberDetails,
@@ -12,18 +13,22 @@ const MemberDetails = ({
   hasUnsavedChanges,
   setHasUnsavedChanges,
   memberRentals,
+  memberRentalHistory,
   availableBDs,
   bdSearchTerm,
   setBdSearchTerm,
   bdPagination,
+  historyPagination,
   rentalColumns,
+  historyColumns,
   bdColumns,
   onBackToList,
   onSaveMember,
   onCancelEdit,
   onFormChange,
   onSearchBDs,
-  onBDPaginationChange
+  onBDPaginationChange,
+  onHistoryPaginationChange
 }) => {
   // Inject CSS for rented rows
   React.useEffect(() => {
@@ -183,6 +188,14 @@ const MemberDetails = ({
         bdPagination={bdPagination}
         onSearchBDs={onSearchBDs}
         onPaginationChange={onBDPaginationChange}
+      />
+
+      {/* Member Rental History Table */}
+      <MemberRentalHistoryTable
+        rentalHistory={memberRentalHistory}
+        historyColumns={historyColumns}
+        historyPagination={historyPagination}
+        onHistoryPaginationChange={onHistoryPaginationChange}
       />
     </div>
   );

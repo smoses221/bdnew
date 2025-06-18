@@ -89,6 +89,28 @@ export const useMemberManagement = () => {
     }
   };
 
+  // Fetch member rental history
+  const fetchMemberRentalHistory = async (memberId, page = 1, pageSize = 10) => {
+    try {
+      const skip = (page - 1) * pageSize;
+      const response = await fetch(`${API_BASE_URL}/admin/membres/${memberId}/rental-history?skip=${skip}&limit=${pageSize}`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const historyData = await response.json();
+        return historyData;
+      } else {
+        message.error('Erreur lors du chargement de l\'historique des locations');
+        return { rentals: [], total: 0 };
+      }
+    } catch (error) {
+      console.error('Error fetching member rental history:', error);
+      message.error('Erreur de connexion');
+      return { rentals: [], total: 0 };
+    }
+  };
+
   // Fetch available BDs
   const fetchAvailableBDs = async (page = 1, pageSize = 25, search = '') => {
     try {
@@ -222,6 +244,7 @@ export const useMemberManagement = () => {
     fetchMembers,
     fetchMemberDetails,
     fetchMemberRentals,
+    fetchMemberRentalHistory,
     fetchAvailableBDs,
     createMember,
     updateMember,

@@ -792,3 +792,57 @@ def create_member(
         "IBAN": new_member.IBAN,
         "groupe": new_member.groupe
     }
+
+@router.get("/admin/membres/{member_id}/rental-history")
+def get_member_rental_history(
+    member_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get member's rental history with pagination."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    # Get total count
+    total = db.query(models.Locations).filter(
+        models.Locations.mid == member_id
+    ).count()
+    
+    # Get rentals with pagination
+    rentals = db.query(models.Locations, models.BD).join(
+        models.BD, models.Locations.bid == models.BD.bid
+    ).filter(
+        models.Locations.mid == member_id
+    ).order_by(
+        models.Locations.debut.desc()
+    ).offset(skip).limit(limit).all()
+    
+    result = []
+    for location, bd in rentals:
+        result.append({
+            "lid": location.lid,
+            "bid": location.bid,
+            "date_location": location.date,
+            "date_debut": location.debut,
+            "date_retour": location.fin,
+            "paye": location.paye,
+            "bd_info": {
+                "bid": bd.bid,
+                "cote": bd.cote,
+                "titreserie": bd.titreserie,
+                "titrealbum": bd.titrealbum,
+                "numtome": bd.numtome,
+                "scenariste": bd.scenariste,
+                "dessinateur": bd.dessinateur
+            }
+        })
+    
+    return {
+        "rentals": result,
+        "total": total
+    }
