@@ -21,7 +21,8 @@
   -p 3306:3306 \
   mysql:8.0 \
   --default-authentication-plugin=mysql_native_password
-  
+in one line:  docker run -d   --name mysql-bookdb   -e MYSQL_ROOT_PASSWORD=rootpassword   -e MYSQL_DATABASE=bookdb   -e MYSQL_USER=appuser   -e MYSQL_PASSWORD=apppassword  -p 3306:3306  mysql:8.0  --default-authentication-plugin=mysql_native_password
+  docker start mysql-bookdb
   
 1. `cd backend`
 2. `python -m venv venv`

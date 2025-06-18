@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Card, Form, Row, Col, Input, Space } from 'antd';
-import { UndoOutlined, EditOutlined, SaveOutlined } from '@ant-design/icons';
+import { UndoOutlined, EditOutlined, SaveOutlined, LeftOutlined } from '@ant-design/icons';
 import MemberRentalsTable from './MemberRentalsTable';
 import AvailableBDsTable from './AvailableBDsTable';
 import MemberRentalHistoryTable from './MemberRentalHistoryTable';
@@ -54,7 +54,7 @@ const MemberDetails = ({
       <Button 
         onClick={onBackToList}
         style={{ marginBottom: 16 }}
-        icon={<UndoOutlined />}
+        icon={<LeftOutlined />}
       >
         Retour à la liste
       </Button>
