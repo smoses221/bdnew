@@ -1,52 +1,31 @@
-import React, { useState, useEffect, useContext, Fragment } from 'react';
-import { 
-  Typography, 
-  Card, 
-  Table, 
-  Button, 
-  Input, 
-  Form, 
-  Space, 
-  Popconfirm, 
-  Modal, 
-  message, 
-  Spin, 
-  Row, 
-  Col, 
-  Divider,
-  Tag
-} from 'antd';
-import { 
-  UserOutlined, 
-  EditOutlined, 
-  SaveOutlined, 
-  UndoOutlined, 
-  BookOutlined, 
-  SearchOutlined,
-  PlusOutlined
-} from '@ant-design/icons';
+import React, { useState, useContext, useEffect } from 'react';
+import { Modal, Tag, Form, Popconfirm, Button } from 'antd';
 import { UserContext } from '../../context/UserContext';
+import { PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
-const { Title, Text } = Typography;
-const { Search } = Input;
+// Components
+import MembersList from '../../components/MemberManagement/MembersList';
+import NewMemberModal from '../../components/MemberManagement/NewMemberModal';
+import MemberDetails from '../../components/MemberManagement/MemberDetails';
+
+// Custom hook
+import { useMemberManagement } from '../../hooks/useMemberManagement';
 
 const AbonnementsSection = () => {
   const { currentUser } = useContext(UserContext);
-  const [members, setMembers] = useState([]);
+  
+  // Local state management
   const [selectedMember, setSelectedMember] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [memberDetails, setMemberDetails] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isNewMemberModalVisible, setIsNewMemberModalVisible] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [editForm] = Form.useForm();
+  const [isEditing, setIsEditing] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [memberDetails, setMemberDetails] = useState(null);
   const [memberRentals, setMemberRentals] = useState([]);
   const [availableBDs, setAvailableBDs] = useState([]);
-  const [bdSearchTerm, setBdSearchTerm] = useState('');
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
-  const [isNewMemberModalVisible, setIsNewMemberModalVisible] = useState(false);
-  const [newMemberForm] = Form.useForm();
-  const [creatingMember, setCreatingMember] = useState(false);
+  const [bdSearchTerm, setBdSearchTerm] = useState('');
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 50,
@@ -57,11 +36,78 @@ const AbonnementsSection = () => {
     pageSize: 25,
     total: 0,
   });
+  const [editForm] = Form.useForm();
+  
+  // Use the custom hook for API functions
+  const {
+    loading,
+    fetchMembers: fetchMembersAPI,
+    fetchMemberDetails: fetchMemberDetailsAPI,
+    fetchMemberRentals: fetchMemberRentalsAPI,
+    fetchAvailableBDs: fetchAvailableBDsAPI,
+    createMember,
+    updateMember,
+    returnBook: returnBookAPI,
+    rentBook: rentBookAPI,
+  } = useMemberManagement();
 
-  const API_BASE_URL = 'http://localhost:8000';
+  // Fetch members wrapper
+  const fetchMembers = async (page = 1, search = '') => {
+    const result = await fetchMembersAPI(page, pagination.pageSize, search);
+    if (result) {
+      setMembers(result.members);
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        total: result.total,
+      }));
+    }
+  };
+
+  // Fetch member details wrapper
+  const fetchMemberDetails = async (memberId) => {
+    const result = await fetchMemberDetailsAPI(memberId);
+    if (result) {
+      setMemberDetails(result);
+      return result;
+    }
+    return null;
+  };
+
+  // Fetch member rentals wrapper
+  const fetchMemberRentals = async (memberId) => {
+    const result = await fetchMemberRentalsAPI(memberId);
+    setMemberRentals(result);
+    return result;
+  };
+
+  // Fetch available BDs wrapper
+  const fetchAvailableBDs = async (page = 1, search = '') => {
+    const result = await fetchAvailableBDsAPI(page, bdPagination.pageSize, search);
+    if (result) {
+      setAvailableBDs(result.bds);
+      setBdPagination(prev => ({
+        ...prev,
+        current: page,
+        total: result.total,
+      }));
+    }
+  };
+
+  // Load members on component mount
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  // Update edit form when member details change
+  useEffect(() => {
+    if (memberDetails) {
+      editForm.setFieldsValue(memberDetails);
+    }
+  }, [memberDetails, editForm]);
 
   // Inject CSS for rented rows
-  React.useEffect(() => {
+  useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
       .rented-row {
@@ -79,206 +125,13 @@ const AbonnementsSection = () => {
     return () => document.head.removeChild(style);
   }, []);
 
-  const getAuthHeaders = () => ({
-    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    'Content-Type': 'application/json',
-  });
-
-  // Fetch members with rental count
-  const fetchMembers = async (page = 1, search = '') => {
-    setLoading(true);
-    try {
-      const skip = (page - 1) * pagination.pageSize;
-      const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-      
-      const [membersResponse, countResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/admin/membres/?skip=${skip}&limit=${pagination.pageSize}${searchParam}`, {
-          headers: getAuthHeaders(),
-        }),
-        fetch(`${API_BASE_URL}/admin/membres/count?${searchParam.substring(1)}`, {
-          headers: getAuthHeaders(),
-        })
-      ]);
-
-      if (membersResponse.ok && countResponse.ok) {
-        const membersData = await membersResponse.json();
-        const countData = await countResponse.json();
-        
-        setMembers(membersData);
-        setPagination(prev => ({
-          ...prev,
-          current: page,
-          total: countData.total,
-        }));
-      } else {
-        message.error('Erreur lors du chargement des membres');
-      }
-    } catch (error) {
-      console.error('Error fetching members:', error);
-      message.error('Erreur de connexion');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch member details
-  const fetchMemberDetails = async (memberId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/membres/${memberId}`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (response.ok) {
-        const memberData = await response.json();
-        setMemberDetails(memberData);
-        editForm.setFieldsValue({
-          ...memberData,
-        });
-      } else {
-        message.error('Erreur lors du chargement des détails du membre');
-      }
-    } catch (error) {
-      console.error('Error fetching member details:', error);
-      message.error('Erreur de connexion');
-    }
-  };
-
-  // Fetch member rentals
-  const fetchMemberRentals = async (memberId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/membres/${memberId}/rentals`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (response.ok) {
-        const rentalsData = await response.json();
-        setMemberRentals(rentalsData);
-      } else {
-        message.error('Erreur lors du chargement des locations');
-      }
-    } catch (error) {
-      console.error('Error fetching member rentals:', error);
-      message.error('Erreur de connexion');
-    }
-  };
-
-  // Fetch available BDs
-  const fetchAvailableBDs = async (page = 1, search = '') => {
-    try {
-      const skip = (page - 1) * bdPagination.pageSize;
-      const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-      
-      const [bdsResponse, countResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/admin/bds/?skip=${skip}&limit=${bdPagination.pageSize}${searchParam}`, {
-          headers: getAuthHeaders(),
-        }),
-        fetch(`${API_BASE_URL}/bds/count?${searchParam.substring(1)}`, {
-          headers: getAuthHeaders(),
-        })
-      ]);
-
-      if (bdsResponse.ok && countResponse.ok) {
-        const bdsData = await bdsResponse.json();
-        const countData = await countResponse.json();
-        
-        setAvailableBDs(bdsData);
-        setBdPagination(prev => ({
-          ...prev,
-          current: page,
-          total: countData.total,
-        }));
-      } else {
-        message.error('Erreur lors du chargement des BDs');
-      }
-    } catch (error) {
-      console.error('Error fetching BDs:', error);
-      message.error('Erreur de connexion');
-    }
-  };
-
-  // Save member changes
-  const saveMemberChanges = async () => {
-    try {
-      const values = await editForm.validateFields();
-
-      const response = await fetch(`${API_BASE_URL}/admin/membres/${memberDetails.mid}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(values),
-      });
-
-      if (response.ok) {
-        const updatedMember = await response.json();
-        setMemberDetails(updatedMember);
-        setIsEditing(false);
-        setHasUnsavedChanges(false);
-        message.success('Membre mis à jour avec succès');
-        
-        // Refresh members list
-        fetchMembers(pagination.current, memberSearchTerm);
-      } else {
-        message.error('Erreur lors de la mise à jour du membre');
-      }
-    } catch (error) {
-      console.error('Error saving member:', error);
-      message.error('Erreur de validation ou de connexion');
-    }
-  };
-
-  // Return book
-  const returnBook = async (rentalId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/rentals/${rentalId}/return`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
-
-      if (response.ok) {
-        message.success('Livre retourné avec succès');
-        fetchMemberRentals(selectedMember);
-        fetchMembers(pagination.current, memberSearchTerm);
-        // Refresh the available BDs table to show the returned book
-        fetchAvailableBDs(bdPagination.current, bdSearchTerm);
-      } else {
-        message.error('Erreur lors du retour du livre');
-      }
-    } catch (error) {
-      console.error('Error returning book:', error);
-      message.error('Erreur de connexion');
-    }
-  };
-
-  // Rent book to member
-  const rentBookToMember = async (bdId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/membres/${selectedMember}/rent/${bdId}`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      });
-
-      if (response.ok) {
-        message.success('Livre loué avec succès');
-        fetchMemberRentals(selectedMember);
-        fetchMembers(pagination.current, memberSearchTerm);
-        // Refresh the available BDs table to update the rented book status
-        fetchAvailableBDs(bdPagination.current, bdSearchTerm);
-      } else {
-        const error = await response.json();
-        message.error(error.detail || 'Erreur lors de la location du livre');
-      }
-    } catch (error) {
-      console.error('Error renting book:', error);
-      message.error('Erreur de connexion');
-    }
-  };
-
   // Handle member selection
   const handleMemberSelect = (record) => {
-    const confirmNavigation = () => {
+    const confirmNavigation = async () => {
       setSelectedMember(record.mid);
-      fetchMemberDetails(record.mid);
-      fetchMemberRentals(record.mid);
-      fetchAvailableBDs(1, bdSearchTerm);
+      await fetchMemberDetails(record.mid);
+      await fetchMemberRentals(record.mid);
+      await fetchAvailableBDs(1, bdSearchTerm);
       setIsEditing(false);
       setHasUnsavedChanges(false);
     };
@@ -298,9 +151,6 @@ const AbonnementsSection = () => {
   const handleBackToList = () => {
     const confirmNavigation = () => {
       setSelectedMember(null);
-      setMemberDetails(null);
-      setMemberRentals([]);
-      setAvailableBDs([]);
       setIsEditing(false);
       setHasUnsavedChanges(false);
     };
@@ -316,57 +166,99 @@ const AbonnementsSection = () => {
     }
   };
 
+  // Handle member search
+  const handleMemberSearch = (searchTerm) => {
+    setMemberSearchTerm(searchTerm);
+    fetchMembers(1, searchTerm);
+  };
+
+  // Handle new member creation
+  const handleCreateMember = async (values) => {
+    const newMember = await createMember(values);
+    if (newMember) {
+      setIsNewMemberModalVisible(false);
+      // Refresh members list
+      await fetchMembers(1, memberSearchTerm);
+      // Auto-select the new member
+      handleMemberSelect(newMember);
+      return true;
+    }
+    return false;
+  };
+
+  // Handle member save
+  const handleSaveMember = async () => {
+    try {
+      const values = await editForm.validateFields();
+      const updatedMember = await updateMember(memberDetails.mid, values);
+      if (updatedMember) {
+        setMemberDetails(updatedMember);
+        setIsEditing(false);
+        setHasUnsavedChanges(false);
+        // Refresh members list
+        await fetchMembers(pagination.current, memberSearchTerm);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Form validation failed:', error);
+      return false;
+    }
+  };
+
+  // Handle return book
+  const handleReturnBook = async (rentalId) => {
+    const success = await returnBookAPI(rentalId);
+    if (success) {
+      // Refresh data
+      await fetchMemberRentals(selectedMember);
+      await fetchMembers(pagination.current, memberSearchTerm);
+      await fetchAvailableBDs(bdPagination.current, bdSearchTerm);
+    }
+  };
+
+  // Handle rent book
+  const handleRentBook = async (bdId) => {
+    const success = await rentBookAPI(selectedMember, bdId);
+    if (success) {
+      // Refresh data
+      await fetchMemberRentals(selectedMember);
+      await fetchMembers(pagination.current, memberSearchTerm);
+      await fetchAvailableBDs(bdPagination.current, bdSearchTerm);
+    }
+  };
+
+  // Handle edit cancel
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setHasUnsavedChanges(false);
+    if (memberDetails) {
+      editForm.setFieldsValue(memberDetails);
+    }
+  };
+
   // Handle form changes
   const handleFormChange = () => {
     setHasUnsavedChanges(true);
   };
 
-  // Create new member function
-  const createNewMember = async () => {
-    try {
-      setCreatingMember(true);
-      const values = await newMemberForm.validateFields();
-      
-      const response = await fetch(`${API_BASE_URL}/admin/membres/`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(values),
-      });
-
-      if (response.ok) {
-        const newMember = await response.json();
-        message.success('Membre créé avec succès!');
-        setIsNewMemberModalVisible(false);
-        newMemberForm.resetFields();
-        
-        // Refresh the members list
-        await fetchMembers(1, memberSearchTerm);
-        
-        // Open the newly created member details
-        handleMemberSelect(newMember);
-      } else {
-        const errorData = await response.json();
-        message.error(errorData.detail || 'Erreur lors de la création du membre');
-      }
-    } catch (error) {
-      console.error('Error creating member:', error);
-      message.error('Erreur de connexion');
-    } finally {
-      setCreatingMember(false);
-    }
+  // Handle pagination change for members
+  const handleMemberPaginationChange = (paginationInfo) => {
+    fetchMembers(paginationInfo.current, memberSearchTerm);
   };
 
-  // Handle new member modal cancel
-  const handleNewMemberCancel = () => {
-    newMemberForm.resetFields();
-    setIsNewMemberModalVisible(false);
+  // Handle pagination change for BDs
+  const handleBDPaginationChange = (paginationInfo) => {
+    fetchAvailableBDs(paginationInfo.current, bdSearchTerm);
   };
 
-  useEffect(() => {
-    fetchMembers();
-  }, []);
+  // Handle BD search
+  const handleBDSearch = (searchTerm) => {
+    setBdSearchTerm(searchTerm);
+    fetchAvailableBDs(1, searchTerm);
+  };
 
-  // Members table columns
+  // Define member columns for the table
   const memberColumns = [
     {
       title: 'Nom',
@@ -392,7 +284,7 @@ const AbonnementsSection = () => {
     },
   ];
 
-  // Rental columns
+  // Define rental columns
   const rentalColumns = [
     {
       title: 'Cote',
@@ -427,7 +319,7 @@ const AbonnementsSection = () => {
         <Popconfirm
           title="Confirmer le retour"
           description="Êtes-vous sûr de vouloir marquer ce livre comme retourné?"
-          onConfirm={() => returnBook(record.lid)}
+          onConfirm={() => handleReturnBook(record.lid)}
           okText="Oui"
           cancelText="Non"
         >
@@ -439,7 +331,7 @@ const AbonnementsSection = () => {
     },
   ];
 
-  // Available BDs columns
+  // Define BD columns
   const bdColumns = [
     {
       title: 'Cote',
@@ -487,7 +379,7 @@ const AbonnementsSection = () => {
           <Popconfirm
             title="Louer ce livre"
             description={`Louer "${record.titreserie}" à ${memberDetails?.nom} ${memberDetails?.prenom}?`}
-            onConfirm={() => rentBookToMember(record.bid)}
+            onConfirm={() => handleRentBook(record.bid)}
             okText="Oui"
             cancelText="Non"
           >
@@ -503,396 +395,53 @@ const AbonnementsSection = () => {
   if (!selectedMember) {
     // Show members list
     return (
-      <Fragment>
-        <Card>
-        <div style={{ marginBottom: 16 }}>
-          <Title level={3}>
-            <UserOutlined style={{ marginRight: 8, color: '#52c41a' }} />
-            Gestion des Abonnements
-          </Title>
-          <Text type="secondary">
-            Cliquez sur un membre pour voir ses détails et gérer ses locations
-          </Text>
-        </div>
-
-        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Search
-            placeholder="Rechercher un membre..."
-            value={memberSearchTerm}
-            onChange={(e) => setMemberSearchTerm(e.target.value)}
-            onSearch={(value) => fetchMembers(1, value)}
-            style={{ width: 300 }}
-            allowClear
-          />
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
-            onClick={() => setIsNewMemberModalVisible(true)}
-          >
-            Nouveau Membre
-          </Button>
-        </div>
-
-        <Table
-          columns={memberColumns}
-          dataSource={members}
-          rowKey="mid"
+      <>
+        <MembersList
+          members={members}
           loading={loading}
-          pagination={{
-            ...pagination,
-            showSizeChanger: false,
-            showQuickJumper: true,
-            showTotal: (total, range) => 
-              `${range[0]}-${range[1]} sur ${total} membres`,
-          }}
-          onRow={(record) => ({
-            onClick: () => handleMemberSelect(record),
-            style: { cursor: 'pointer' },
-          })}
-          onChange={(paginationInfo) => {
-            fetchMembers(paginationInfo.current, memberSearchTerm);
-          }}
+          memberSearchTerm={memberSearchTerm}
+          setMemberSearchTerm={setMemberSearchTerm}
+          pagination={pagination}
+          onMemberSelect={handleMemberSelect}
+          onSearchMembers={handleMemberSearch}
+          onPaginationChange={handleMemberPaginationChange}
+          onNewMemberClick={() => setIsNewMemberModalVisible(true)}
+          memberColumns={memberColumns}
         />
-      </Card>
 
-      {/* New Member Modal */}
-      <Modal
-        title="Créer un nouveau membre"
-        open={isNewMemberModalVisible}
-        onOk={createNewMember}
-        onCancel={handleNewMemberCancel}
-        confirmLoading={creatingMember}
-        okText="Créer"
-        cancelText="Annuler"
-        width={800}
-      >
-        <Form
-          form={newMemberForm}
-          layout="vertical"
-        >
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Nom"
-                name="nom"
-                rules={[{ required: true, message: 'Le nom est obligatoire' }]}
-              >
-                <Input placeholder="Nom de famille" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Prénom"
-                name="prenom"
-                rules={[{ required: true, message: 'Le prénom est obligatoire' }]}
-              >
-                <Input placeholder="Prénom" />
-              </Form.Item>
-            </Col>
-          </Row>            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  label="GSM"
-                  name="gsm"
-                >
-                  <Input placeholder="0XXX XX XX XX" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  label="Email"
-                  name="mail"
-                  rules={[
-                    { type: 'email', message: 'Format d\'email invalide' }
-                  ]}
-                >
-                  <Input placeholder="email@exemple.com" />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  label="Rue"
-                  name="rue"
-                >
-                  <Input placeholder="Nom de la rue" />
-                </Form.Item>
-              </Col>
-              <Col span={6}>
-                <Form.Item
-                  label="Numéro"
-                  name="numero"
-                >
-                  <Input placeholder="123" />
-                </Form.Item>
-              </Col>
-              <Col span={6}>
-                <Form.Item
-                  label="Boîte"
-                  name="boite"
-                >
-                  <Input placeholder="A, B, etc." />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={16}>
-              <Col span={8}>
-                <Form.Item
-                  label="Code Postal"
-                  name="codepostal"
-                >
-                  <Input placeholder="1000" />
-                </Form.Item>
-              </Col>
-              <Col span={16}>
-                <Form.Item
-                  label="Ville"
-                  name="ville"
-                >
-                  <Input placeholder="Bruxelles" />
-                </Form.Item>
-              </Col>
-            </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Caution (€)"
-                name="caution"
-                rules={[{ required: true, message: 'La caution est obligatoire' }]}
-              >
-                <Input placeholder="50" type="number" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="IBAN"
-                name="IBAN"
-              >
-                <Input placeholder="BE68 5390 0754 7034" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Groupe"
-                name="groupe"
-              >
-                <Input placeholder="Étudiants, Professeurs, etc." />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            label="Remarque"
-            name="remarque"
-          >
-            <Input.TextArea 
-              placeholder="Remarques ou notes supplémentaires..." 
-              rows={3}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
-      </Fragment>
+        <NewMemberModal
+          visible={isNewMemberModalVisible}
+          onOk={handleCreateMember}
+          onCancel={() => setIsNewMemberModalVisible(false)}
+          loading={loading}
+        />
+      </>
     );
   }
 
   // Show member details
   return (
-    <div>
-      <Button 
-        onClick={handleBackToList}
-        style={{ marginBottom: 16 }}
-        icon={<UndoOutlined />}
-      >
-        Retour à la liste
-      </Button>
-
-      {/* Member Information Card */}
-      <Card 
-        title={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>Informations du membre</span>
-            <Space>
-              {!isEditing && (
-                <Button 
-                  type="primary" 
-                  icon={<EditOutlined />}
-                  onClick={() => setIsEditing(true)}
-                >
-                  Modifier
-                </Button>
-              )}
-              {isEditing && (
-                <>
-                  <Button 
-                    type="primary" 
-                    icon={<SaveOutlined />}
-                    onClick={saveMemberChanges}
-                  >
-                    Sauvegarder
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      setIsEditing(false);
-                      setHasUnsavedChanges(false);
-                      editForm.setFieldsValue({
-                        ...memberDetails,
-                      });
-                    }}
-                  >
-                    Annuler
-                  </Button>
-                </>
-              )}
-            </Space>
-          </div>
-        }
-        style={{ marginBottom: 24 }}
-      >
-        {memberDetails && (
-          <Form
-            form={editForm}
-            layout="vertical"
-            disabled={!isEditing}
-            onValuesChange={handleFormChange}
-          >
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item label="Nom" name="nom" rules={[{ required: true }]}>
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label="Prénom" name="prenom" rules={[{ required: true }]}>
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={24}>
-                <Form.Item label="Groupe" name="groupe">
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label="GSM" name="gsm">
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label="Email" name="mail" rules={[{ type: 'email', message: 'Format d\'email invalide' }]}>
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item label="Rue" name="rue">
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={4}>
-                <Form.Item label="Numéro" name="numero">
-                  <Input type="number" />
-                </Form.Item>
-              </Col>
-              <Col span={4}>
-                <Form.Item label="Boîte" name="boite">
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={4}>
-                <Form.Item label="Code postal" name="codepostal">
-                  <Input type="number" />
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item label="Ville" name="ville">
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label="Caution" name="caution" rules={[{ required: true }]}>
-                  <Input type="number" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label="IBAN" name="IBAN">
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col span={24}>
-                <Form.Item label="Remarques" name="remarque">
-                  <Input.TextArea rows={3} />
-                </Form.Item>
-              </Col>
-            </Row>
-          </Form>
-        )}
-      </Card>
-
-      {/* Member Rentals Card */}
-      <Card 
-        title={
-          <span>
-            <BookOutlined style={{ marginRight: 8 }} />
-            Livres actuellement loués
-          </span>
-        }
-        style={{ marginBottom: 24 }}
-      >
-        <Table
-          columns={rentalColumns}
-          dataSource={memberRentals}
-          rowKey="lid"
-          pagination={false}
-          locale={{
-            emptyText: 'Aucun livre actuellement loué'
-          }}
-        />
-      </Card>
-
-      {/* Available BDs for Rental */}
-      <Card 
-        title={
-          <span>
-            <SearchOutlined style={{ marginRight: 8 }} />
-            Louer un nouveau livre
-          </span>
-        }
-      >
-        <div style={{ marginBottom: 16 }}>
-          <Search
-            placeholder="Rechercher une BD..."
-            value={bdSearchTerm}
-            onChange={(e) => setBdSearchTerm(e.target.value)}
-            onSearch={(value) => fetchAvailableBDs(1, value)}
-            style={{ width: 400 }}
-            allowClear
-          />
-        </div>
-
-        <Table
-          columns={bdColumns}
-          dataSource={availableBDs}
-          rowKey="bid"
-          rowClassName={(record) => record.is_rented ? 'rented-row' : ''}
-          pagination={{
-            ...bdPagination,
-            showSizeChanger: false,
-            showQuickJumper: true,
-            showTotal: (total, range) => 
-              `${range[0]}-${range[1]} sur ${total} BDs`,
-          }}
-          onChange={(paginationInfo) => {
-            fetchAvailableBDs(paginationInfo.current, bdSearchTerm);
-          }}
-        />
-      </Card>
-    </div>
+    <MemberDetails
+      memberDetails={memberDetails}
+      isEditing={isEditing}
+      setIsEditing={setIsEditing}
+      editForm={editForm}
+      hasUnsavedChanges={hasUnsavedChanges}
+      setHasUnsavedChanges={setHasUnsavedChanges}
+      memberRentals={memberRentals}
+      availableBDs={availableBDs}
+      bdSearchTerm={bdSearchTerm}
+      setBdSearchTerm={setBdSearchTerm}
+      bdPagination={bdPagination}
+      rentalColumns={rentalColumns}
+      bdColumns={bdColumns}
+      onBackToList={handleBackToList}
+      onSaveMember={handleSaveMember}
+      onCancelEdit={handleCancelEdit}
+      onFormChange={handleFormChange}
+      onSearchBDs={handleBDSearch}
+      onBDPaginationChange={handleBDPaginationChange}
+    />
   );
 };
 
