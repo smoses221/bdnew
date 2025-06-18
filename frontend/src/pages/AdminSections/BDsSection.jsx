@@ -157,7 +157,7 @@ const BDsSection = () => {
       title: 'Tome',
       dataIndex: 'numtome',
       key: 'numtome',
-      width: 80,
+      width: 60,
       sorter: true,
       sortOrder: sortInfo.field === 'numtome' ? (sortInfo.order === 'asc' ? 'ascend' : 'descend') : null,
       align: 'center',
