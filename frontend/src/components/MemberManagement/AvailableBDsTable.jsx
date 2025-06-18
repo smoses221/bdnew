@@ -21,6 +21,7 @@ const AvailableBDsTable = ({
           Louer un nouveau livre
         </span>
       }
+      style={{ marginBottom: 24 }}
     >
       <div style={{ marginBottom: 16 }}>
         <Search
