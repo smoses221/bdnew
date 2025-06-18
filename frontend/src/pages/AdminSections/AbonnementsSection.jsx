@@ -776,22 +776,22 @@ const AbonnementsSection = () => {
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item label="GSM" name="gsm" rules={[{ required: true }]}>
+                <Form.Item label="GSM" name="gsm">
                   <Input />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item label="Email" name="mail">
+                <Form.Item label="Email" name="mail" rules={[{ type: 'email', message: 'Format d\'email invalide' }]}>
                   <Input />
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item label="Rue" name="rue" rules={[{ required: true }]}>
+                <Form.Item label="Rue" name="rue">
                   <Input />
                 </Form.Item>
               </Col>
               <Col span={4}>
-                <Form.Item label="Numéro" name="numero" rules={[{ required: true }]}>
+                <Form.Item label="Numéro" name="numero">
                   <Input type="number" />
                 </Form.Item>
               </Col>
@@ -801,12 +801,12 @@ const AbonnementsSection = () => {
                 </Form.Item>
               </Col>
               <Col span={4}>
-                <Form.Item label="Code postal" name="codepostal" rules={[{ required: true }]}>
+                <Form.Item label="Code postal" name="codepostal">
                   <Input type="number" />
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item label="Ville" name="ville" rules={[{ required: true }]}>
+                <Form.Item label="Ville" name="ville">
                   <Input />
                 </Form.Item>
               </Col>

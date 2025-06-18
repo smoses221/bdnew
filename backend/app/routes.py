@@ -560,12 +560,23 @@ def update_member(
             detail="Not enough permissions"
         )
     
+    # Validate email format if provided
+    if member_data.mail and member_data.mail.strip():
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, member_data.mail):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Format d'email invalide"
+            )
+    
     member = db.query(models.Membres).filter(models.Membres.mid == member_id).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
     
     # Update member fields
     for field, value in member_data.dict(exclude_unset=True).items():
+        if field == 'mail' and value and not value.strip():
+            value = None  # Convert empty string to None
         setattr(member, field, value)
     
     db.commit()
