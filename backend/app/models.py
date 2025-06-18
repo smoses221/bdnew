@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Date, TIMESTAMP, Text, ForeignKey, Boolean, UniqueConstraint
+from sqlalchemy import Column, String, Integer, Date, TIMESTAMP, Text, ForeignKey, Boolean, UniqueConstraint, func
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -26,8 +26,8 @@ class BD(Base):
     collection = Column(String(255))
     editeur = Column(String(255))
     genre = Column(String(200))
-    date_creation = Column(TIMESTAMP, default="CURRENT_TIMESTAMP")
-    date_modification = Column(TIMESTAMP)
+    date_creation = Column(TIMESTAMP, default=func.now())
+    date_modification = Column(TIMESTAMP, onupdate=func.now())
     titre_norm = Column(String(255))
     serie_norm = Column(String(255))
     ISBN = Column(Integer)
@@ -64,7 +64,7 @@ class Locations(Base):
     paye = Column(Boolean, default=False, nullable=False)
     mail_rappel_1_envoye = Column(Boolean, default=False, nullable=False)
     mail_rappel_2_envoye = Column(Boolean, default=False, nullable=False)
-    debut = Column(TIMESTAMP, default="CURRENT_TIMESTAMP", nullable=False)
+    debut = Column(TIMESTAMP, default=func.now(), nullable=False)
     fin = Column(TIMESTAMP)
     bd = relationship("BD", back_populates="locations")
     membre = relationship("Membres", back_populates="locations")

@@ -884,3 +884,245 @@ def get_member_rental_history(
         "rentals": result,
         "total": total
     }
+
+# BD management routes
+@router.get("/admin/bds/")
+def get_bds_with_pagination(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    search: Optional[str] = Query(None, description="Search term for BD"),
+    sort_field: Optional[str] = Query("cote", description="Field to sort by"),
+    sort_order: Optional[str] = Query("asc", description="Sort order: asc or desc"),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get BDs with pagination, search and sorting."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    query = db.query(models.BD)
+    
+    # Apply search filter if provided
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                models.BD.cote.ilike(search_term),
+                models.BD.titreserie.ilike(search_term),
+                models.BD.titrealbum.ilike(search_term),
+                models.BD.scenariste.ilike(search_term),
+                models.BD.dessinateur.ilike(search_term),
+                models.BD.editeur.ilike(search_term),
+                models.BD.collection.ilike(search_term),
+                models.BD.genre.ilike(search_term)
+            )
+        )
+    
+    # Apply sorting
+    valid_sort_fields = ['cote', 'titreserie', 'titrealbum', 'numtome', 'scenariste', 'dessinateur', 'editeur', 'collection', 'genre']
+    if sort_field and sort_field in valid_sort_fields:
+        if hasattr(models.BD, sort_field):
+            sort_column = getattr(models.BD, sort_field)
+            if sort_order.lower() == 'desc':
+                query = query.order_by(sort_column.desc())
+            else:
+                query = query.order_by(sort_column.asc())
+    else:
+        # Default sort by cote
+        query = query.order_by(models.BD.cote.asc())
+    
+    bds = query.offset(skip).limit(limit).all()
+    return bds
+
+@router.get("/admin/bds/count")
+def get_bds_count(
+    search: Optional[str] = Query(None, description="Search term for BD"),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get total count of BDs."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    query = db.query(models.BD)
+    
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                models.BD.cote.ilike(search_term),
+                models.BD.titreserie.ilike(search_term),
+                models.BD.titrealbum.ilike(search_term),
+                models.BD.scenariste.ilike(search_term),
+                models.BD.dessinateur.ilike(search_term),
+                models.BD.editeur.ilike(search_term),
+                models.BD.collection.ilike(search_term),
+                models.BD.genre.ilike(search_term)
+            )
+        )
+    
+    total = query.count()
+    return {"total": total}
+
+@router.get("/admin/bds/{bd_id}")
+def get_bd_details(
+    bd_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get BD details by ID."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    bd = db.query(models.BD).filter(models.BD.bid == bd_id).first()
+    if not bd:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="BD not found"
+        )
+    
+    return bd
+
+@router.post("/admin/bds/")
+def create_bd(
+    bd_data: dict,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new BD."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    # Check if cote already exists
+    existing_bd = db.query(models.BD).filter(models.BD.cote == bd_data.get("cote")).first()
+    if existing_bd:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Une BD avec cette cote existe déjà"
+        )
+    
+    # Create new BD (excluding ignored fields)
+    new_bd = models.BD(
+        cote=bd_data.get("cote"),
+        titreserie=bd_data.get("titreserie"),
+        titrealbum=bd_data.get("titrealbum"),
+        numtome=bd_data.get("numtome"),
+        scenariste=bd_data.get("scenariste"),
+        dessinateur=bd_data.get("dessinateur"),
+        collection=bd_data.get("collection"),
+        editeur=bd_data.get("editeur"),
+        genre=bd_data.get("genre"),
+        ISBN=bd_data.get("ISBN")
+    )
+    
+    db.add(new_bd)
+    db.commit()
+    db.refresh(new_bd)
+    
+    return new_bd
+
+@router.put("/admin/bds/{bd_id}")
+def update_bd(
+    bd_id: int,
+    bd_data: dict,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update an existing BD."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    bd = db.query(models.BD).filter(models.BD.bid == bd_id).first()
+    if not bd:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="BD not found"
+        )
+    
+    # Check if new cote conflicts with existing BD (if cote is being changed)
+    if bd_data.get("cote") and bd_data.get("cote") != bd.cote:
+        existing_bd = db.query(models.BD).filter(models.BD.cote == bd_data.get("cote")).first()
+        if existing_bd:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Une BD avec cette cote existe déjà"
+            )
+    
+    # Update BD fields (excluding ignored fields)
+    if bd_data.get("cote") is not None:
+        bd.cote = bd_data.get("cote")
+    if bd_data.get("titreserie") is not None:
+        bd.titreserie = bd_data.get("titreserie")
+    if bd_data.get("titrealbum") is not None:
+        bd.titrealbum = bd_data.get("titrealbum")
+    if bd_data.get("numtome") is not None:
+        bd.numtome = bd_data.get("numtome")
+    if bd_data.get("scenariste") is not None:
+        bd.scenariste = bd_data.get("scenariste")
+    if bd_data.get("dessinateur") is not None:
+        bd.dessinateur = bd_data.get("dessinateur")
+    if bd_data.get("collection") is not None:
+        bd.collection = bd_data.get("collection")
+    if bd_data.get("editeur") is not None:
+        bd.editeur = bd_data.get("editeur")
+    if bd_data.get("genre") is not None:
+        bd.genre = bd_data.get("genre")
+    if bd_data.get("ISBN") is not None:
+        bd.ISBN = bd_data.get("ISBN")
+    
+    db.commit()
+    db.refresh(bd)
+    
+    return bd
+
+@router.delete("/admin/bds/{bd_id}")
+def delete_bd(
+    bd_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a BD."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    bd = db.query(models.BD).filter(models.BD.bid == bd_id).first()
+    if not bd:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="BD not found"
+        )
+    
+    # Check if BD has active rentals
+    active_rentals = db.query(models.Locations).filter(
+        models.Locations.bid == bd_id,
+        models.Locations.fin.is_(None)
+    ).count()
+    
+    if active_rentals > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Impossible de supprimer une BD actuellement louée"
+        )
+    
+    db.delete(bd)
+    db.commit()
+    
+    return {"message": "BD supprimée avec succès"}
