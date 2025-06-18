@@ -424,6 +424,8 @@ def get_members_with_rental_count(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     search: Optional[str] = Query(None, description="Search term for member name"),
+    sort_field: Optional[str] = Query("nom", description="Field to sort by"),
+    sort_order: Optional[str] = Query("asc", description="Sort order: asc or desc"),
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -446,6 +448,42 @@ def get_members_with_rental_count(
                 models.Membres.groupe.ilike(search_term)
             )
         )
+    
+    # Apply sorting
+    if sort_field == 'active_rentals':
+        # For active_rentals, we need to sort by the count of active rentals
+        # This requires a more complex query with subquery
+        from sqlalchemy import func
+        
+        # Subquery to count active rentals per member
+        active_rentals_subq = (
+            db.query(
+                models.Locations.mid,
+                func.count(models.Locations.lid).label('rental_count')
+            )
+            .filter(models.Locations.fin.is_(None))
+            .group_by(models.Locations.mid)
+            .subquery()
+        )
+        
+        # Join with the subquery and sort
+        query = query.outerjoin(active_rentals_subq, models.Membres.mid == active_rentals_subq.c.mid)
+        rental_count_col = func.coalesce(active_rentals_subq.c.rental_count, 0)
+        
+        if sort_order.lower() == 'desc':
+            query = query.order_by(rental_count_col.desc())
+        else:
+            query = query.order_by(rental_count_col.asc())
+    elif sort_field and sort_field in ['nom', 'prenom', 'groupe']:
+        if hasattr(models.Membres, sort_field):
+            sort_column = getattr(models.Membres, sort_field)
+            if sort_order.lower() == 'desc':
+                query = query.order_by(sort_column.desc())
+            else:
+                query = query.order_by(sort_column.asc())
+    else:
+        # Default sort by nom
+        query = query.order_by(models.Membres.nom.asc())
     
     members = query.offset(skip).limit(limit).all()
     

@@ -12,14 +12,15 @@ export const useMemberManagement = () => {
   });
 
   // Fetch members with rental count
-  const fetchMembers = async (page = 1, pageSize = 50, search = '') => {
+  const fetchMembers = async (page = 1, pageSize = 50, search = '', sortField = 'nom', sortOrder = 'asc') => {
     setLoading(true);
     try {
       const skip = (page - 1) * pageSize;
       const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+      const sortParam = `&sort_field=${sortField}&sort_order=${sortOrder}`;
       
       const [membersResponse, countResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/admin/membres/?skip=${skip}&limit=${pageSize}${searchParam}`, {
+        fetch(`${API_BASE_URL}/admin/membres/?skip=${skip}&limit=${pageSize}${searchParam}${sortParam}`, {
           headers: getAuthHeaders(),
         }),
         fetch(`${API_BASE_URL}/admin/membres/count?${searchParam.substring(1)}`, {

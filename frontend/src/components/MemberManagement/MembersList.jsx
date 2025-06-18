@@ -14,6 +14,7 @@ const MembersList = ({
   onMemberSelect,
   onSearchMembers,
   onPaginationChange,
+  onTableChange,
   onNewMemberClick,
   memberColumns
 }) => {
@@ -63,7 +64,7 @@ const MembersList = ({
           onClick: () => onMemberSelect(record),
           style: { cursor: 'pointer' },
         })}
-        onChange={onPaginationChange}
+        onChange={onTableChange || onPaginationChange}
       />
     </Card>
   );

@@ -43,6 +43,10 @@ const AbonnementsSection = () => {
     pageSize: 10,
     total: 0,
   });
+  const [memberSortInfo, setMemberSortInfo] = useState({
+    field: 'nom',
+    order: 'asc'
+  });
   const [editForm] = Form.useForm();
   
   // Use the custom hook for API functions
@@ -60,8 +64,8 @@ const AbonnementsSection = () => {
   } = useMemberManagement();
 
   // Fetch members wrapper
-  const fetchMembers = async (page = 1, search = '') => {
-    const result = await fetchMembersAPI(page, pagination.pageSize, search);
+  const fetchMembers = async (page = 1, search = '', sortField = memberSortInfo.field, sortOrder = memberSortInfo.order) => {
+    const result = await fetchMembersAPI(page, pagination.pageSize, search, sortField, sortOrder);
     if (result) {
       setMembers(result.members);
       setPagination(prev => ({
@@ -192,7 +196,23 @@ const AbonnementsSection = () => {
   // Handle member search
   const handleMemberSearch = (searchTerm) => {
     setMemberSearchTerm(searchTerm);
-    fetchMembers(1, searchTerm);
+    fetchMembers(1, searchTerm, memberSortInfo.field, memberSortInfo.order);
+  };
+
+  // Handle table changes (pagination and sorting) for members
+  const handleMemberTableChange = (paginationInfo, filters, sorter) => {
+    let sortField = memberSortInfo.field;
+    let sortOrder = memberSortInfo.order;
+    
+    // Handle sorting
+    if (sorter && sorter.field) {
+      sortField = sorter.field;
+      sortOrder = sorter.order === 'ascend' ? 'asc' : 'desc';
+      setMemberSortInfo({ field: sortField, order: sortOrder });
+    }
+    
+    // Fetch with new parameters
+    fetchMembers(paginationInfo.current, memberSearchTerm, sortField, sortOrder);
   };
 
   // Handle new member creation
@@ -267,11 +287,6 @@ const AbonnementsSection = () => {
     setHasUnsavedChanges(true);
   };
 
-  // Handle pagination change for members
-  const handleMemberPaginationChange = (paginationInfo) => {
-    fetchMembers(paginationInfo.current, memberSearchTerm);
-  };
-
   // Handle pagination change for BDs
   const handleBDPaginationChange = (paginationInfo) => {
     fetchAvailableBDs(paginationInfo.current, bdSearchTerm);
@@ -294,22 +309,30 @@ const AbonnementsSection = () => {
       title: 'Nom',
       dataIndex: 'nom',
       key: 'nom',
+      sorter: true,
+      sortOrder: memberSortInfo.field === 'nom' ? (memberSortInfo.order === 'asc' ? 'ascend' : 'descend') : null,
     },
     {
       title: 'Prénom',
       dataIndex: 'prenom',
       key: 'prenom',
+      sorter: true,
+      sortOrder: memberSortInfo.field === 'prenom' ? (memberSortInfo.order === 'asc' ? 'ascend' : 'descend') : null,
     },
     {
       title: 'Groupe',
       dataIndex: 'groupe',
       key: 'groupe',
+      sorter: true,
+      sortOrder: memberSortInfo.field === 'groupe' ? (memberSortInfo.order === 'asc' ? 'ascend' : 'descend') : null,
       render: (groupe) => groupe ? <Tag color="blue">{groupe}</Tag> : '-',
     },
     {
       title: 'BDs louées',
       dataIndex: 'active_rentals',
       key: 'active_rentals',
+      sorter: true,
+      sortOrder: memberSortInfo.field === 'active_rentals' ? (memberSortInfo.order === 'asc' ? 'ascend' : 'descend') : null,
       render: (count) => (
         <Tag color={count > 0 ? 'orange' : 'green'}>
           {count} BD{count > 1 ? 's' : ''}
@@ -491,7 +514,8 @@ const AbonnementsSection = () => {
           pagination={pagination}
           onMemberSelect={handleMemberSelect}
           onSearchMembers={handleMemberSearch}
-          onPaginationChange={handleMemberPaginationChange}
+          onPaginationChange={handleMemberTableChange}
+          onTableChange={handleMemberTableChange}
           onNewMemberClick={() => setIsNewMemberModalVisible(true)}
           memberColumns={memberColumns}
         />
