@@ -27,6 +27,7 @@ const BDsTable = ({
       onChange={onTableChange}
       scroll={{ x: 1200 }}
       size="small"
+      tableLayout="auto"
     />
   );
 };
