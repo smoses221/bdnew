@@ -27,3 +27,14 @@ app.include_router(api_router)
 @app.get("/")
 def read_root():
     return {"message": "BD Library API is running! Visit /docs for API documentation."}
+
+
+# After defining all your routes, add this:
+@app.on_event("startup")
+async def startup_event():
+    print("Available routes:")
+    for route in app.routes:
+        if hasattr(route, 'methods'):
+            print(f"{route.methods} {route.path}")
+        else:
+            print(f"WebSocket {route.path}")

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, cast, Integer
 from typing import Optional
 from datetime import datetime, timedelta
+import re
 from . import models, schemas
 from .database import SessionLocal
 from .auth import verify_password, get_password_hash, create_access_token, verify_token
@@ -142,7 +143,7 @@ def check_setup(db: Session = Depends(get_db)):
     return {"setup_required": user_count == 0}
 
 # Protected routes (require authentication)
-@router.get("/admin/bds/", response_model=list[schemas.BDBase])
+@router.get("/admin/bds/")
 def admin_list_bds(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(20, ge=1, le=100, description="Number of records to return"),
@@ -152,7 +153,7 @@ def admin_list_bds(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Protected admin endpoint for listing BDs."""
+    """Protected admin endpoint for listing BDs with rental status."""
     if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -209,7 +210,46 @@ def admin_list_bds(
             cast(models.BD.numtome, Integer).asc()
         )
     
-    return query.offset(skip).limit(limit).all()
+    bds = query.offset(skip).limit(limit).all()
+    
+    # Add rental status to each BD
+    result = []
+    for bd in bds:
+        # Check if this BD is currently rented
+        active_rental = db.query(models.Locations).filter(
+            models.Locations.bid == bd.bid,
+            models.Locations.fin.is_(None)
+        ).first()
+        
+        bd_dict = {
+            "bid": bd.bid,
+            "cote": bd.cote,
+            "titreserie": bd.titreserie,
+            "titrealbum": bd.titrealbum,
+            "numtome": bd.numtome,
+            "scenariste": bd.scenariste,
+            "dessinateur": bd.dessinateur,
+            "collection": bd.collection,
+            "editeur": bd.editeur,
+            "genre": bd.genre,
+            "date_creation": bd.date_creation,
+            "date_modification": bd.date_modification,
+            "titre_norm": bd.titre_norm,
+            "serie_norm": bd.serie_norm,
+            "ISBN": bd.ISBN,
+            "is_rented": active_rental is not None,
+            "rented_by": None
+        }
+        
+        # If rented, add information about who rented it
+        if active_rental:
+            member = db.query(models.Membres).filter(models.Membres.mid == active_rental.mid).first()
+            if member:
+                bd_dict["rented_by"] = f"{member.nom} {member.prenom}"
+        
+        result.append(bd_dict)
+    
+    return result
 
 # Protected admin routes (require authentication and admin privileges)
 @router.get("/admin/stats")
@@ -378,24 +418,469 @@ def get_bd(bid: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="BD not found")
     return bd
 
-# List all Membres
-@router.get("/membres/", response_model=list[schemas.MembresBase])
-def list_membres(
+# Member management routes
+@router.get("/admin/membres/")
+def get_members_with_rental_count(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
+    search: Optional[str] = Query(None, description="Search term for member name"),
+    sort_field: Optional[str] = Query("nom", description="Field to sort by"),
+    sort_order: Optional[str] = Query("asc", description="Sort order: asc or desc"),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return db.query(models.Membres).offset(skip).limit(limit).all()
+    """Get members with their active rental count."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    query = db.query(models.Membres)
+    
+    # Apply search filter if provided
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                models.Membres.nom.ilike(search_term),
+                models.Membres.prenom.ilike(search_term),
+                models.Membres.groupe.ilike(search_term)
+            )
+        )
+    
+    # Apply sorting
+    if sort_field == 'active_rentals':
+        # For active_rentals, we need to sort by the count of active rentals
+        # This requires a more complex query with subquery
+        from sqlalchemy import func
+        
+        # Subquery to count active rentals per member
+        active_rentals_subq = (
+            db.query(
+                models.Locations.mid,
+                func.count(models.Locations.lid).label('rental_count')
+            )
+            .filter(models.Locations.fin.is_(None))
+            .group_by(models.Locations.mid)
+            .subquery()
+        )
+        
+        # Join with the subquery and sort
+        query = query.outerjoin(active_rentals_subq, models.Membres.mid == active_rentals_subq.c.mid)
+        rental_count_col = func.coalesce(active_rentals_subq.c.rental_count, 0)
+        
+        if sort_order.lower() == 'desc':
+            query = query.order_by(rental_count_col.desc())
+        else:
+            query = query.order_by(rental_count_col.asc())
+    elif sort_field and sort_field in ['nom', 'prenom', 'groupe']:
+        if hasattr(models.Membres, sort_field):
+            sort_column = getattr(models.Membres, sort_field)
+            if sort_order.lower() == 'desc':
+                query = query.order_by(sort_column.desc())
+            else:
+                query = query.order_by(sort_column.asc())
+    else:
+        # Default sort by nom
+        query = query.order_by(models.Membres.nom.asc())
+    
+    members = query.offset(skip).limit(limit).all()
+    
+    # Add rental count to each member
+    result = []
+    for member in members:
+        active_rentals = db.query(models.Locations).filter(
+            models.Locations.mid == member.mid,
+            models.Locations.fin.is_(None)
+        ).count()
+        
+        member_dict = {
+            "mid": member.mid,
+            "nom": member.nom,
+            "prenom": member.prenom,
+            "gsm": member.gsm,
+            "rue": member.rue,
+            "numero": member.numero,
+            "boite": member.boite,
+            "codepostal": member.codepostal,
+            "ville": member.ville,
+            "mail": member.mail,
+            "caution": member.caution,
+            "remarque": member.remarque,
+            "bdpass": member.bdpass,
+            "abonnement": member.abonnement,
+            "vip": member.vip,
+            "IBAN": member.IBAN,
+            "groupe": member.groupe,
+            "active_rentals": active_rentals
+        }
+        result.append(member_dict)
+    
+    return result
 
-# Get BD statistics
-@router.get("/stats/")
-def get_stats(db: Session = Depends(get_db)):
-    total_bds = db.query(models.BD).count()
-    total_membres = db.query(models.Membres).count()
-    total_locations = db.query(models.Locations).count()
+@router.get("/admin/membres/count")
+def get_members_count(
+    search: Optional[str] = Query(None, description="Search term for member name"),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get total count of members."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    query = db.query(models.Membres)
+    
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                models.Membres.nom.ilike(search_term),
+                models.Membres.prenom.ilike(search_term),
+                models.Membres.groupe.ilike(search_term)
+            )
+        )
+    
+    total = query.count()
+    return {"total": total}
+
+@router.get("/admin/membres/{member_id}")
+def get_member_details(
+    member_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get detailed member information."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    member = db.query(models.Membres).filter(models.Membres.mid == member_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
     
     return {
-        "total_bds": total_bds,
-        "total_membres": total_membres,
-        "total_locations": total_locations
+        "mid": member.mid,
+        "nom": member.nom,
+        "prenom": member.prenom,
+        "gsm": member.gsm,
+        "rue": member.rue,
+        "numero": member.numero,
+        "boite": member.boite,
+        "codepostal": member.codepostal,
+        "ville": member.ville,
+        "mail": member.mail,
+        "caution": member.caution,
+        "remarque": member.remarque,
+        "bdpass": member.bdpass,
+        "abonnement": member.abonnement,
+        "vip": member.vip,
+        "IBAN": member.IBAN,
+        "groupe": member.groupe
+    }
+
+@router.put("/admin/membres/{member_id}")
+def update_member(
+    member_id: int,
+    member_data: schemas.MembresCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update member information."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    # Validate email format if provided
+    if member_data.mail and member_data.mail.strip():
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, member_data.mail):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Format d'email invalide"
+            )
+    
+    member = db.query(models.Membres).filter(models.Membres.mid == member_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    # Update member fields
+    for field, value in member_data.dict(exclude_unset=True).items():
+        if field == 'mail' and value and not value.strip():
+            value = None  # Convert empty string to None
+        setattr(member, field, value)
+    
+    db.commit()
+    db.refresh(member)
+    
+    return {
+        "mid": member.mid,
+        "nom": member.nom,
+        "prenom": member.prenom,
+        "gsm": member.gsm,
+        "rue": member.rue,
+        "numero": member.numero,
+        "boite": member.boite,
+        "codepostal": member.codepostal,
+        "ville": member.ville,
+        "mail": member.mail,
+        "caution": member.caution,
+        "remarque": member.remarque,
+        "bdpass": member.bdpass,
+        "abonnement": member.abonnement,
+        "vip": member.vip,
+        "IBAN": member.IBAN,
+        "groupe": member.groupe
+    }
+
+@router.get("/admin/membres/{member_id}/rentals")
+def get_member_rentals(
+    member_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get member's current rentals."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    rentals = db.query(models.Locations, models.BD).join(
+        models.BD, models.Locations.bid == models.BD.bid
+    ).filter(
+        models.Locations.mid == member_id,
+        models.Locations.fin.is_(None)
+    ).all()
+    
+    result = []
+    for location, bd in rentals:
+        result.append({
+            "lid": location.lid,
+            "bid": location.bid,
+            "date": location.date,
+            "debut": location.debut,
+            "bd_info": {
+                "bid": bd.bid,
+                "cote": bd.cote,
+                "titreserie": bd.titreserie,
+                "titrealbum": bd.titrealbum,
+                "numtome": bd.numtome,
+                "scenariste": bd.scenariste,
+                "dessinateur": bd.dessinateur
+            }
+        })
+    
+    return result
+
+@router.post("/admin/rentals/{rental_id}/return")
+def return_book(
+    rental_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Mark a book as returned."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    rental = db.query(models.Locations).filter(models.Locations.lid == rental_id).first()
+    if not rental:
+        raise HTTPException(status_code=404, detail="Rental not found")
+    
+    if rental.fin is not None:
+        raise HTTPException(status_code=400, detail="Book already returned")
+    
+    rental.fin = datetime.utcnow()
+    db.commit()
+    
+    return {"message": "Book returned successfully", "rental_id": rental_id}
+
+@router.post("/admin/membres/{member_id}/rent/{bd_id}")
+def rent_book_to_member(
+    member_id: int,
+    bd_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Rent a book to a member."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    # Check if member exists
+    member = db.query(models.Membres).filter(models.Membres.mid == member_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    # Check if BD exists
+    bd = db.query(models.BD).filter(models.BD.bid == bd_id).first()
+    if not bd:
+        raise HTTPException(status_code=404, detail="BD not found")
+    
+    # Check if book is already rented
+    existing_rental = db.query(models.Locations).filter(
+        models.Locations.bid == bd_id,
+        models.Locations.fin.is_(None)
+    ).first()
+    
+    if existing_rental:
+        raise HTTPException(status_code=400, detail="Book is already rented")
+    
+    # Create new rental
+    new_rental = models.Locations(
+        bid=bd_id,
+        mid=member_id,
+        date=datetime.now().date(),
+        debut=datetime.utcnow(),
+        paye=False,
+        mail_rappel_1_envoye=False,
+        mail_rappel_2_envoye=False
+    )
+    
+    db.add(new_rental)
+    db.commit()
+    db.refresh(new_rental)
+    
+    return {"message": "Book rented successfully", "rental_id": new_rental.lid}
+
+@router.post("/admin/membres/")
+def create_member(
+    member_data: schemas.MembresCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new member."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    # Check if member with same name already exists
+    existing_member = db.query(models.Membres).filter(
+        models.Membres.nom == member_data.nom,
+        models.Membres.prenom == member_data.prenom
+    ).first()
+    
+    if existing_member:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Un membre avec ce nom et prénom existe déjà"
+        )
+    
+    # Validate email format
+    if member_data.mail and not re.match(r"[^@]+@[^@]+\.[^@]+", member_data.mail):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Adresse e-mail invalide"
+        )
+    
+    # Create new member
+    new_member = models.Membres(
+        nom=member_data.nom,
+        prenom=member_data.prenom,
+        gsm=member_data.gsm,
+        rue=member_data.rue,
+        numero=member_data.numero,
+        boite=member_data.boite,
+        codepostal=member_data.codepostal,
+        ville=member_data.ville,
+        mail=member_data.mail,
+        caution=member_data.caution,
+        remarque=member_data.remarque,
+        bdpass='0',  # Default value
+        abonnement=None,  # Will be set later if needed
+        vip=False,  # Default value
+        IBAN=member_data.IBAN,
+        groupe=member_data.groupe
+    )
+    
+    db.add(new_member)
+    db.commit()
+    db.refresh(new_member)
+    
+    return {
+        "mid": new_member.mid,
+        "nom": new_member.nom,
+        "prenom": new_member.prenom,
+        "gsm": new_member.gsm,
+        "rue": new_member.rue,
+        "numero": new_member.numero,
+        "boite": new_member.boite,
+        "codepostal": new_member.codepostal,
+        "ville": new_member.ville,
+        "mail": new_member.mail,
+        "caution": new_member.caution,
+        "remarque": new_member.remarque,
+        "bdpass": new_member.bdpass,
+        "abonnement": new_member.abonnement,
+        "vip": new_member.vip,
+        "IBAN": new_member.IBAN,
+        "groupe": new_member.groupe
+    }
+
+@router.get("/admin/membres/{member_id}/rental-history")
+def get_member_rental_history(
+    member_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get member's rental history with pagination."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    # Get total count
+    total = db.query(models.Locations).filter(
+        models.Locations.mid == member_id
+    ).count()
+    
+    # Get rentals with pagination
+    rentals = db.query(models.Locations, models.BD).join(
+        models.BD, models.Locations.bid == models.BD.bid
+    ).filter(
+        models.Locations.mid == member_id
+    ).order_by(
+        models.Locations.debut.desc()
+    ).offset(skip).limit(limit).all()
+    
+    result = []
+    for location, bd in rentals:
+        result.append({
+            "lid": location.lid,
+            "bid": location.bid,
+            "date_location": location.date,
+            "date_debut": location.debut,
+            "date_retour": location.fin,
+            "paye": location.paye,
+            "bd_info": {
+                "bid": bd.bid,
+                "cote": bd.cote,
+                "titreserie": bd.titreserie,
+                "titrealbum": bd.titrealbum,
+                "numtome": bd.numtome,
+                "scenariste": bd.scenariste,
+                "dessinateur": bd.dessinateur
+            }
+        })
+    
+    return {
+        "rentals": result,
+        "total": total
     }

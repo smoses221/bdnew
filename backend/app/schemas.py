@@ -25,37 +25,84 @@ class Token(BaseModel):
     user: UserResponse
 
 class BDBase(BaseModel):
-    bid: str
+    bid: int
     cote: str
-    titreserie: Optional[str]
-    titrealbum: Optional[str]
-    numtome: Optional[str]
+    titreserie: str
+    titrealbum: Optional[str] = None
+    numtome: Optional[str] = None
     scenariste: str
     dessinateur: str
-    collection: Optional[str]
-    editeur: Optional[str]
-    genre: Optional[str]
-    date_creation: Optional[datetime]
-    date_modification: Optional[datetime]
-    titre_norm: Optional[str]
-    serie_norm: Optional[str]
+    collection: Optional[str] = None
+    editeur: Optional[str] = None
+    genre: Optional[str] = None
+    date_creation: Optional[datetime] = None
+    date_modification: Optional[datetime] = None
+    titre_norm: Optional[str] = None
+    serie_norm: Optional[str] = None
+    ISBN: Optional[int] = None
+
+class BDCreate(BaseModel):
+    cote: str
+    titreserie: str
+    titrealbum: Optional[str] = None
+    numtome: Optional[str] = None
+    scenariste: str
+    dessinateur: str
+    collection: Optional[str] = None
+    editeur: Optional[str] = None
+    genre: Optional[str] = None
+    titre_norm: Optional[str] = None
+    serie_norm: Optional[str] = None
+    ISBN: Optional[int] = None
+
+class BDResponse(BDBase):
+    class Config:
+        from_attributes = True
 
 class MembresBase(BaseModel):
-    mid: Optional[int]
+    mid: Optional[int] = None
     nom: str
     prenom: str
     gsm: str
     rue: str
     numero: int
-    boite: Optional[str]
+    boite: Optional[str] = None
     codepostal: int
     ville: str
-    mail: Optional[str]
+    mail: Optional[str] = None
     caution: int
-    remarque: Optional[str]
-    bdpass: Optional[str]
-    abonnement: Optional[date]
-    vip: Optional[int]
+    remarque: Optional[str] = None
+    bdpass: str = '0'
+    abonnement: Optional[date] = None
+    vip: bool = False
+    IBAN: Optional[str] = None
+    groupe: Optional[str] = None
+
+class MembresCreate(BaseModel):
+    nom: str
+    prenom: str
+    gsm: Optional[str] = None
+    rue: Optional[str] = None
+    numero: Optional[int] = None
+    boite: Optional[str] = None
+    codepostal: Optional[int] = None
+    ville: Optional[str] = None
+    mail: Optional[str] = None
+    caution: int
+    remarque: Optional[str] = None
+    IBAN: Optional[str] = None
+    groupe: Optional[str] = None
+
+class MembresResponse(MembresBase):
+    mid: int
+    class Config:
+        from_attributes = True
+
+class MembresWithRentals(MembresResponse):
+    active_rentals: int = 0
+    
+    class Config:
+        from_attributes = True
 
 class BDPassBase(BaseModel):
     mid: int
@@ -63,11 +110,26 @@ class BDPassBase(BaseModel):
     date: Optional[date]
 
 class LocationsBase(BaseModel):
-    bid: str
+    lid: Optional[int] = None
+    bid: int
     mid: int
     date: date
-    paye: Optional[int]
-    mail_rappel_1_envoye: Optional[int]
-    mail_rappel_2_envoye: Optional[int]
-    debut: Optional[datetime]
-    fin: Optional[datetime]
+    paye: bool = False
+    mail_rappel_1_envoye: bool = False
+    mail_rappel_2_envoye: bool = False
+    debut: datetime
+    fin: Optional[datetime] = None
+
+class LocationsCreate(BaseModel):
+    bid: int
+    mid: int
+    date: date
+    paye: bool = False
+    mail_rappel_1_envoye: bool = False
+    mail_rappel_2_envoye: bool = False
+    fin: Optional[datetime] = None
+
+class LocationsResponse(LocationsBase):
+    lid: int
+    class Config:
+        from_attributes = True
