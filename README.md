@@ -32,8 +32,10 @@
 
 ### Frontend
 1. `cd frontend`
-2. `npm install`
-3. `npm run dev`
+2. `sudo apt install npm`
+3. `npm install`
+4. `npm run dev`
+
 
 ---
 

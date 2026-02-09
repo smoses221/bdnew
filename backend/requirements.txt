@@ -5,3 +5,6 @@ sqlalchemy
 pydantic
 mysqlclient
 python-dotenv
+passlib
+pymysql
+python-jose[cryptography]

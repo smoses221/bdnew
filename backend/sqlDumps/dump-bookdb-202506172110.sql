@@ -8084,7 +8084,7 @@ CREATE TABLE `users` (
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
 INSERT INTO `users` VALUES
-(1,'admin','yo@bibaud.com','$2b$12$yI4WYlIFAUbLH2y6OEEKpOjOLrzcHjbHyNMFH9ezvbHn.qMYxkauK',1,1,'2025-06-14 23:01:00');
+(1,'yo','yo@bibaud.com','$2b$12$yI4WYlIFAUbLH2y6OEEKpOjOLrzcHjbHyNMFH9ezvbHn.qMYxkauK',1,1,'2025-06-14 23:01:00');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 

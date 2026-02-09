@@ -1,0 +1,19 @@
+# .dockerignore for backend build context
+# Keep virtualenvs, caches and secrets out of the image build context
+
+venv
+.venv
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.env
+.git
+dist
+build
+*.egg-info
+.pytest_cache/
+.vscode/
+.idea/
+*.swp
+*~
