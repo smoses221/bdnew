@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { message } from 'antd';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = '/api';
 
 export const useMemberManagement = () => {
   const [loading, setLoading] = useState(false);

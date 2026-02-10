@@ -1,0 +1,16 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-job:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy application
+        run: |
+          echo "Deploying application..."
+          curl -v -H "X-Auth-Token: ${{ secrets.DEPLOY_TOKEN }}" --fail-with-body "https://ci.kotbd.kapucl.be/deploy"
