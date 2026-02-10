@@ -161,12 +161,12 @@ const BDsSection = () => {
         <Form form={form} layout="vertical" initialValues={emptyForm}>
           <Row gutter={12}>
             <Col span={12}>
-              <Form.Item name="cote" label="Cote" rules={[{ required: true }]}>
+              <Form.Item name="cote" label="Cote" rules={[{ required: true, message: 'La cote est obligatoire' }]}>
                 <Input />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="titreserie" label="Série" rules={[{ required: true }]}>
+              <Form.Item name="titreserie" label="Série" rules={[{ required: true, message: 'La série est obligatoire' }]}>
                 <Input />
               </Form.Item>
             </Col>
