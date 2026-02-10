@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Card, Table, Button, Modal, Form, Input, Space, message } from 'antd';
+import { Typography, Card, Table, Button, Modal, Form, Input, Space, message, Row, Col } from 'antd';
 import { BookOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -123,15 +123,7 @@ const BDsSection = () => {
     { title: 'Série', dataIndex: 'titreserie', key: 'titreserie' },
     { title: 'Titre', dataIndex: 'titrealbum', key: 'titrealbum' },
     { title: 'Tome', dataIndex: 'numtome', key: 'numtome' },
-    { title: 'Dessinateur', dataIndex: 'dessinateur', key: 'dessinateur' },
-    {
-      title: 'Actions', key: 'actions', render: (_, record) => (
-        <Space>
-          <Button icon={<EditOutlined />} onClick={() => openEdit(record)}>Edit</Button>
-          <Button danger onClick={() => remove(record)}>Delete</Button>
-        </Space>
-      )
-    }
+    { title: 'Dessinateur', dataIndex: 'dessinateur', key: 'dessinateur' }
   ];
 
   return (
@@ -153,6 +145,10 @@ const BDsSection = () => {
         rowKey="bid"
         loading={loading}
         pagination={{ pageSize: 20 }}
+        onRow={(record) => ({
+          style: { cursor: 'pointer' },
+          onClick: () => openEdit(record)
+        })}
       />
 
       <Modal
@@ -160,39 +156,90 @@ const BDsSection = () => {
         open={modalVisible}
         onOk={save}
         onCancel={() => setModalVisible(false)}
-        destroyOnClose
+        width={800}
       >
         <Form form={form} layout="vertical" initialValues={emptyForm}>
-          <Form.Item name="cote" label="Cote" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="titreserie" label="Série" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="titrealbum" label="Titre">
-            <Input />
-          </Form.Item>
-          <Form.Item name="numtome" label="Tome">
-            <Input />
-          </Form.Item>
-          <Form.Item name="scenariste" label="Scénariste">
-            <Input />
-          </Form.Item>
-          <Form.Item name="dessinateur" label="Dessinateur">
-            <Input />
-          </Form.Item>
-          <Form.Item name="collection" label="Collection">
-            <Input />
-          </Form.Item>
-          <Form.Item name="editeur" label="Éditeur">
-            <Input />
-          </Form.Item>
-          <Form.Item name="genre" label="Genre">
-            <Input />
-          </Form.Item>
-          <Form.Item name="ISBN" label="ISBN">
-            <Input />
-          </Form.Item>
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="cote" label="Cote" rules={[{ required: true }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="titreserie" label="Série" rules={[{ required: true }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="titrealbum" label="Titre">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="numtome" label="Tome">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="scenariste" label="Scénariste">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="dessinateur" label="Dessinateur">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="collection" label="Collection">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="editeur" label="Éditeur">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="genre" label="Genre">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="ISBN" label="ISBN">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {editing && (
+            <div style={{ marginTop: 8 }}>
+              <Button danger onClick={() => {
+                Modal.confirm({
+                  title: 'Confirmer la suppression',
+                  content: 'Voulez-vous vraiment supprimer cette BD ?',
+                  onOk: async () => {
+                    await remove(editing);
+                    setModalVisible(false);
+                  }
+                });
+              }}>
+                Supprimer
+              </Button>
+            </div>
+          )}
         </Form>
       </Modal>
     </Card>
