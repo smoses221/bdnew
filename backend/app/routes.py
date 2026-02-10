@@ -320,6 +320,99 @@ def admin_manage_locations(
     
     return {"message": "Location management section", "admin": current_user.username}
 
+
+# Admin CRUD for BDs
+@router.post("/admin/bds/", response_model=schemas.BDResponse)
+def create_bd(
+    bd_data: schemas.BDCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new BD (admin only)."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+
+    # Ensure cote uniqueness
+    existing = db.query(models.BD).filter(models.BD.cote == bd_data.cote).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Cote already exists")
+
+    new_bd = models.BD(
+        cote=bd_data.cote,
+        titreserie=bd_data.titreserie,
+        titrealbum=bd_data.titrealbum,
+        numtome=bd_data.numtome,
+        scenariste=bd_data.scenariste,
+        dessinateur=bd_data.dessinateur,
+        collection=bd_data.collection,
+        editeur=bd_data.editeur,
+        genre=bd_data.genre,
+        titre_norm=bd_data.titre_norm,
+        serie_norm=bd_data.serie_norm,
+        ISBN=bd_data.ISBN
+    )
+
+    db.add(new_bd)
+    db.commit()
+    db.refresh(new_bd)
+
+    return schemas.BDResponse.from_orm(new_bd)
+
+
+@router.put("/admin/bds/{bid}", response_model=schemas.BDResponse)
+def update_bd(
+    bid: int,
+    bd_data: schemas.BDCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update an existing BD (admin only)."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+
+    bd = db.query(models.BD).filter(models.BD.bid == bid).first()
+    if not bd:
+        raise HTTPException(status_code=404, detail="BD not found")
+
+    # Update fields
+    for field, value in bd_data.dict(exclude_unset=True).items():
+        setattr(bd, field, value)
+    bd.date_modification = datetime.utcnow()
+
+    db.commit()
+    db.refresh(bd)
+
+    return schemas.BDResponse.from_orm(bd)
+
+
+@router.delete("/admin/bds/{bid}")
+def delete_bd(
+    bid: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a BD (admin only)."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+
+    bd = db.query(models.BD).filter(models.BD.bid == bid).first()
+    if not bd:
+        raise HTTPException(status_code=404, detail="BD not found")
+
+    db.delete(bd)
+    db.commit()
+
+    return {"message": "BD deleted", "bid": bid}
+
 # Public routes (no authentication required)
 # List BDs with pagination, search, and sorting
 @router.get("/bds/", response_model=list[schemas.BDBase])
