@@ -13,6 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # copy backend sources (use .dockerignore to skip venv, __pycache__, etc.)
 COPY . .
 
-EXPOSE 8000
+EXPOSE 8001
 # wait for DB to become ready, then start the app
-CMD ["sh", "-c", "python wait_for_db.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "python wait_for_db.py && uvicorn app.main:app --host 0.0.0.0 --port 8001"]

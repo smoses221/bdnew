@@ -40,7 +40,7 @@ const LoginPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
-  const API_BASE_URL = 'http://localhost:8000';
+  const API_BASE_URL = '/api';
 
   // Check if admin setup is required and if user is already authenticated
   useEffect(() => {

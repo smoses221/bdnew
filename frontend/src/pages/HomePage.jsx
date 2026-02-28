@@ -31,7 +31,7 @@ const HomePage = () => {
   
   const pageSize = 100; // Number of items per page
 
-  const API_BASE_URL = 'http://localhost:8000';
+  const API_BASE_URL = '/api';
 
   // Column definitions with mobile-first responsive design
   const columns = useMemo(() => [

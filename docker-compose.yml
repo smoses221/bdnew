@@ -1,6 +1,6 @@
 services:
   db:
-    image: mysql:8.0
+    image: mysql:8.0.36
     container_name: mysql-bookdb
     restart: unless-stopped
     environment:
@@ -8,8 +8,6 @@ services:
       MYSQL_DATABASE: bookdb
       MYSQL_USER: appuser
       MYSQL_PASSWORD: apppassword
-    ports:
-      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
       # Initialize the DB on first container start by placing SQL here
@@ -25,26 +23,25 @@ services:
       - ./backend/.env
     environment:
       - DATABASE_URL=mysql+pymysql://appuser:apppassword@db:3306/bookdb
-    ports:
-      - "8000:8000"
     depends_on:
       - db
+    networks:
+      - default
+      - external
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: bd-frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: ["npm","run","dev","--","--host"]
-    environment:
-      - CHOKIDAR_USEPOLLING=true   # optional, only if watch doesn't detect changes
     depends_on:
       - backend
+    networks:
+      - external
 
 volumes:
   db_data:
+
+networks:
+  external:
+    external: true
